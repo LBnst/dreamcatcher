@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "accounts",
+    "dreams",
 ]
 
 MIDDLEWARE = [
@@ -52,10 +54,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Base de données : SQLite par défaut, PostgreSQL dès que DATABASE_URL est défini.
+# bdd par defaut : sqlite -> postgresql des que l'url de la bdd est définie
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
 }
+
+# connexion par email
+AUTH_USER_MODEL = "accounts.Utilisateur"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -18,6 +18,7 @@ class Reve(models.Model):
         type_media: Rendu choisi par l'utilisateur (image ou vidéo).
         media: Fichier de l'image ou de la vidéo générée.
         id_tache_externe: Identifiant de la génération vidéo chez le fournisseur.
+        generation_lancee_le: Lancement de la génération vidéo, pour le délai maximal.
         statut: Avancement du traitement.
         message_erreur: Explication affichée à l'utilisateur si le traitement échoue.
         date_creation: Horodatage de création.
@@ -60,6 +61,7 @@ class Reve(models.Model):
     type_media = models.CharField(max_length=10, choices=TypeMedia.choices, default=TypeMedia.IMAGE)
     media = models.FileField(upload_to="reves/%Y/%m/", blank=True)
     id_tache_externe = models.CharField(max_length=255, blank=True)
+    generation_lancee_le = models.DateTimeField(null=True, blank=True)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_COURS)
     message_erreur = models.CharField(max_length=255, blank=True)
     date_creation = models.DateTimeField(auto_now_add=True)

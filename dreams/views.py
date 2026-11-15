@@ -11,6 +11,7 @@ from .forms import ReveForm
 from .models import Reve
 from .services.pipeline import demarrer_traitement
 from .services.quotas import MESSAGE_BUDGET, budget_atteint, message_quota
+from .services.video import suivre_video
 
 
 @consentement_requis
@@ -71,7 +72,10 @@ def detail_reve(request, pk):
 
 @require_GET
 def statut_reve(request, pk):
-    """Renvoie le statut du traitement, interrogé régulièrement par la page du rêve.
+    """Renvoie le statut du traitement, interrogé toutes les 5 s par la page du rêve.
+
+    Pour une vidéo en cours de génération, c'est aussi l'occasion de demander
+    son avancement à Google.
 
     Args:
         request: Requête HTTP reçue.
@@ -81,6 +85,8 @@ def statut_reve(request, pk):
         JsonResponse: ``{"statut": "en_cours" | "termine" | "erreur"}``.
     """
     reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    if reve.statut == Reve.Statut.EN_COURS and reve.id_tache_externe:
+        reve = suivre_video(reve.pk)
     return JsonResponse({"statut": reve.statut})
 
 

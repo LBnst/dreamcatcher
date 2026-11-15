@@ -10,4 +10,5 @@ urlpatterns = [
     path("<int:pk>/", views.detail_reve, name="detail_reve"),
     path("<int:pk>/statut/", views.statut_reve, name="statut_reve"),
     path("<int:pk>/reessayer/", views.reessayer_reve, name="reessayer_reve"),
+    path("<int:pk>/media/", views.media_reve, name="media_reve"),
 ]

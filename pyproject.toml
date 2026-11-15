@@ -25,6 +25,8 @@ convention = "google"
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
+filterwarnings = ["ignore:No directory at:UserWarning"]
+
 
 ###étendue et seuil de couverture par les tests
 [tool.coverage.run]
@@ -37,6 +39,7 @@ omit = [
     "config/asgi.py",
     "config/wsgi.py",
     "scripts/*",
+    "gunicorn.conf.py"
 ]
 
 [tool.coverage.report]

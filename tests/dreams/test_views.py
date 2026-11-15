@@ -301,7 +301,7 @@ def test_detail_affiche_l_image_generee(client_consentant, utilisateur_consentan
     contenu = client_consentant.get(reverse("detail_reve", args=[reve.pk])).content.decode()
 
     assert "Illustration générée" in contenu
-    assert reve.media.url in contenu
+    assert reverse("media_reve", args=[reve.pk]) in contenu
 
 
 def test_statut_suit_la_video_en_cours(client_consentant, utilisateur_consentant, monkeypatch):
@@ -345,4 +345,39 @@ def test_detail_affiche_la_video_generee(client_consentant, utilisateur_consenta
     contenu = client_consentant.get(reverse("detail_reve", args=[reve.pk])).content.decode()
 
     assert "<video" in contenu
-    assert reve.media.url in contenu
+    assert reverse("media_reve", args=[reve.pk]) in contenu
+
+
+# --- Médias protégés -------------------------------------------------------
+
+
+def test_media_servi_a_son_proprietaire(client_consentant, utilisateur_consentant):
+    reve = creer_reve(utilisateur_consentant, media=SimpleUploadedFile("reve.jpg", b"image"))
+
+    reponse = client_consentant.get(reverse("media_reve", args=[reve.pk]))
+
+    assert reponse.status_code == 200
+    assert reponse["Content-Type"] == "image/jpeg"
+    assert b"".join(reponse.streaming_content) == b"image"
+
+
+def test_media_d_un_autre_utilisateur_renvoie_404(client_consentant):
+    autre = Utilisateur.objects.create_user(email="autre@exemple.fr", password="x")
+    reve = creer_reve(autre, media=SimpleUploadedFile("reve.jpg", b"image"))
+
+    assert client_consentant.get(reverse("media_reve", args=[reve.pk])).status_code == 404
+
+
+def test_media_absent_renvoie_404(client_consentant, utilisateur_consentant):
+    reve = creer_reve(utilisateur_consentant)
+
+    assert client_consentant.get(reverse("media_reve", args=[reve.pk])).status_code == 404
+
+
+def test_media_exige_une_connexion(client):
+    proprietaire = Utilisateur.objects.create_user(email="p@exemple.fr", password="x")
+    reve = creer_reve(proprietaire, media=SimpleUploadedFile("reve.jpg", b"image"))
+
+    reponse = client.get(reverse("media_reve", args=[reve.pk]))
+
+    assert reponse.url.startswith(reverse("connexion"))

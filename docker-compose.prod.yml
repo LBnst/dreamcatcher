@@ -1,0 +1,56 @@
+# Déploiement local de production.
+# Lancement : docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+name: dreamcatcher-prod  # projet distinct : ne touche pas aux conteneurs de développement
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dreamcatcher
+      POSTGRES_USER: dreamcatcher
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definissez POSTGRES_PASSWORD dans .env.prod}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dreamcatcher -d dreamcatcher"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Pas de « ports » : la base n'est accessible que depuis l'application.
+
+  web:
+    build: .
+    image: ${IMAGE_DREAMCATCHER:-dreamcatcher:local}
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      DEBUG: "False"
+      DATABASE_URL: postgres://dreamcatcher:${POSTGRES_PASSWORD}@db:5432/dreamcatcher
+    # Applique les migrations, puis démarre gunicorn.
+    command: >-
+      sh -c "python manage.py migrate --noinput
+      && gunicorn config.wsgi:application -c gunicorn.conf.py"
+    volumes:
+      - medias:/app/media                       # images et vidéos, conservées
+      - hf_cache:/root/.cache/huggingface       # modèle d'émotion, téléchargé une fois
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health')
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  pgdata:
+  medias:
+  hf_cache:

@@ -222,3 +222,34 @@ def test_reve_deja_termine_aucun_appel(reve_lance, faux_http):
     suivre(reve_lance)
 
     assert faux.appels == []
+
+
+# --- Cas limites -----------------------------------------------------------
+
+
+def test_reponse_illisible_au_lancement(reve, faux_http):
+    faux_http(reponse_http(200, content=b"pas du json"))
+
+    with pytest.raises(ErreurGeneration):
+        lancer_video(reve, "A scene.")
+
+
+def test_erreur_inattendue_pendant_le_suivi(reve_lance, monkeypatch):
+    def avancer_en_panne(reve):
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(video, "_avancer", avancer_en_panne)
+
+    reve = suivre(reve_lance)
+
+    assert reve.statut == Reve.Statut.ERREUR
+    assert reve.message_erreur == video.MESSAGE_INDISPONIBLE
+    assert AppelApi.objects.get().message_erreur == "Erreur inattendue"
+
+
+def test_suivi_sans_date_de_lancement(reve_lance, faux_http):
+    reve_lance.generation_lancee_le = None
+    reve_lance.save()
+    faux_http(interaction("in_progress"))
+
+    assert suivre(reve_lance).statut == Reve.Statut.EN_COURS

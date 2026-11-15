@@ -2,7 +2,7 @@
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
@@ -88,6 +88,27 @@ def detail_reve(request, pk):
     """
     reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
     return render(request, "dreams/detail.html", {"reve": reve})
+
+
+def media_reve(request, pk):
+    """Envoie l'image ou la vidéo d'un rêve, uniquement à son propriétaire.
+
+    Les fichiers ne sont jamais servis directement par leur adresse : chaque accès
+    passe par ce contrôle (exigence « accès uniquement à mes propres données »).
+
+    Args:
+        request: Requête HTTP reçue.
+        pk: Identifiant du rêve.
+
+    Returns:
+        FileResponse: Le fichier (erreur 404 s'il n'existe pas ou appartient à un autre).
+    """
+    reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    if not reve.media:
+        raise Http404("Aucun média pour ce rêve.")
+    reponse = FileResponse(reve.media.open("rb"))
+    reponse["Cache-Control"] = "private, max-age=3600"
+    return reponse
 
 
 @require_GET

@@ -11,6 +11,7 @@ class Reve(models.Model):
     Attributes:
         utilisateur: Propriétaire du rêve ; ses rêves sont supprimés avec son compte.
         date_reve: Nuit du rêve, utilisée pour les filtres par date.
+        audio: Récit enregistré, supprimé dès la fin du traitement (RGPD)
         transcription: Texte renvoyé par l'API de transcription.
         emotion: Émotion dominante détectée (filtre par humeur).
         score_emotion: Confiance du modèle de classification, entre 0 et 1.
@@ -42,6 +43,7 @@ class Reve(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reves"
     )
     date_reve = models.DateField("nuit du rêve", default=timezone.localdate)
+    audio = models.FileField(upload_to="audio/%Y/%m/", blank=True)
     transcription = models.TextField(blank=True)
     emotion = models.CharField(max_length=20, choices=Emotion.choices, blank=True)
     score_emotion = models.FloatField(null=True, blank=True)

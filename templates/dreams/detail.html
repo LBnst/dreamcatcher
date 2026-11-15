@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block titre %}Rêve du {{ reve.date_reve|date:"d/m/Y" }} – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="col-lg-8">
+    <h1 class="h3">Rêve du {{ reve.date_reve|date:"j F Y" }}</h1>
+    <p>
+      <span class="badge text-bg-secondary">{{ reve.get_type_media_display }}</span>
+      <span class="badge text-bg-info">{{ reve.get_statut_display }}</span>
+    </p>
+
+    {% if reve.transcription %}
+      <p>{{ reve.transcription|linebreaksbr }}</p>
+    {% else %}
+      <p class="text-body-secondary">La transcription de votre rêve sera bientôt disponible.</p>
+    {% endif %}
+
+    <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
+  </div>
+{% endblock %}

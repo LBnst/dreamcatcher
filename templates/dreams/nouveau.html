@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titre %}Raconter un rêve – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="col-lg-8">
+    <h1 class="h3 mb-4">Raconter un rêve</h1>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <p class="text-body-secondary mb-2" id="enr-statut">Appuyez sur le bouton et racontez votre rêve.</p>
+          <p class="display-6 mb-3" id="enr-chrono">00:00</p>
+          <button type="button" class="btn btn-danger btn-lg" id="enr-demarrer">🎙️ Enregistrer</button>
+          <button type="button" class="btn btn-secondary btn-lg d-none" id="enr-arreter">⏹️ Arrêter</button>
+          <div class="d-none mt-3" id="enr-apercu">
+            <audio controls class="w-100 mb-2" id="enr-lecteur"></audio>
+            <button type="button" class="btn btn-outline-secondary" id="enr-recommencer">🔄 Recommencer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.audio.id_for_label }}">{{ form.audio.label }}</label>
+        {{ form.audio }}
+        <div class="form-text">wav, mp3, m4a, ogg ou webm – 20 Mo maximum.</div>
+        {{ form.audio.errors }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.date_reve.id_for_label }}">{{ form.date_reve.label }}</label>
+        {{ form.date_reve }}
+        {{ form.date_reve.errors }}
+      </div>
+
+      <div class="mb-4">
+        <p class="form-label mb-1">{{ form.type_media.label }}</p>
+        {% for choix in form.type_media %}
+          <div class="form-check form-check-inline">
+            {{ choix.tag }}
+            <label class="form-check-label" for="{{ choix.id_for_label }}">{{ choix.choice_label }}</label>
+          </div>
+        {% endfor %}
+        {{ form.type_media.errors }}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg">Envoyer mon rêve</button>
+    </form>
+  </div>
+
+  <script src="{% static 'js/enregistreur.js' %}"></script>
+{% endblock %}

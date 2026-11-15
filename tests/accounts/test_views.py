@@ -95,14 +95,14 @@ def test_deconnexion(client, utilisateur):
     reponse = client.post(reverse("deconnexion"))
 
     assert reponse.url == reverse("connexion")
-    assert client.get(reverse("accueil")).status_code == 302  # plus connecté
+    assert not client.get(reverse("accueil")).context["user"].is_authenticated
 
 
 # --- Accès réservé ---------------------------------------------------------
 
 
-def test_accueil_redirige_vers_la_connexion_si_anonyme(client):
-    reponse = client.get(reverse("accueil"))
+def test_page_protegee_redirige_vers_la_connexion_si_anonyme(client):
+    reponse = client.get(reverse("consentement"))
 
     assert reponse.status_code == 302
     assert reponse.url.startswith(reverse("connexion"))

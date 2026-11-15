@@ -2,27 +2,26 @@
 
 from django.contrib import admin
 from django.contrib.auth.decorators import login_not_required
-from django.http import JsonResponse
 from django.urls import include, path
 from django.views.generic import TemplateView
 
-
-@login_not_required
-def health(request):
-    """Indique à l'hébergeur que le service répond.
-
-    Args:
-        request: Requête HTTP reçue.
-
-    Returns:
-        JsonResponse: ``{"status": "ok"}`` avec le code 200.
-    """
-    return JsonResponse({"status": "ok"})
-
+from . import views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="accueil.html"), name="accueil"),
+    # pages publiques
+    path(
+        "",
+        login_not_required(TemplateView.as_view(template_name="accueil.html")),
+        name="accueil",
+    ),
+    path(
+        "confidentialite/",
+        login_not_required(TemplateView.as_view(template_name="confidentialite.html")),
+        name="confidentialite",
+    ),
+    # applications
     path("comptes/", include("accounts.urls")),
+    # pages admin
     path("admin/", admin.site.urls),
-    path("health", health, name="health"),
+    path("health", views.health, name="health"),
 ]

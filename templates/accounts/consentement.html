@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block titre %}Consentement – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="col-lg-8">
+    <h1 class="h3 mb-3">Vos rêves, vos données</h1>
+
+    {% if user.a_consenti %}
+      <div class="alert alert-success">
+        Vous avez donné votre consentement le {{ user.consentement_le|date:"d/m/Y à H:i" }}.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" name="action" value="retirer" class="btn btn-outline-danger">
+          Retirer mon consentement
+        </button>
+      </form>
+    {% else %}
+      <p>Avant votre premier enregistrement, voici l'essentiel de ce que deviennent vos rêves :</p>
+      <ul>
+        <li>votre voix est transcrite par Mistral AI, puis l'audio est <strong>supprimé</strong> ;</li>
+        <li>l'émotion détectée est une <strong>proposition modifiable</strong>, jamais un diagnostic ;</li>
+        <li>seule une description de la scène, sans donnée identifiante, est envoyée pour générer l'image ou la vidéo ;</li>
+        <li>vous pouvez supprimer vos rêves ou votre compte à tout moment.</li>
+      </ul>
+      <p>
+        Détails complets dans la
+        <a href="{% url 'confidentialite' %}" target="_blank">politique de confidentialité</a>.
+      </p>
+
+      <form method="post" class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" name="action" value="accepter" class="btn btn-primary">
+          J'accepte
+        </button>
+        <button type="submit" name="action" value="refuser" class="btn btn-outline-secondary">
+          Je refuse
+        </button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

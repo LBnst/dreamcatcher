@@ -10,6 +10,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
+    #check également si postgresql est prêt 
       test: ["CMD-SHELL", "pg_isready -U dreamcatcher -d dreamcatcher"]
       interval: 5s
       timeout: 5s
@@ -19,7 +20,6 @@ services:
     build: .
     env_file: .env
     environment:
-      # Dans Docker, la base s'appelle "db" et non "localhost"
       DATABASE_URL: postgres://dreamcatcher:dreamcatcher@db:5432/dreamcatcher
     volumes:
       - .:/app
@@ -30,4 +30,5 @@ services:
         condition: service_healthy
 
 volumes:
+#données restent enregistrées quand la base est arrêtée
   pgdata:

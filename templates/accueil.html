@@ -1,6 +1,42 @@
 {% extends "base.html" %}
 
 {% block contenu %}
-  <h1>Bienvenue sur Dreamcatcher</h1>
-  <p>Vous êtes connecté avec l'adresse {{ user.email }}.</p>
+  <section class="dc-hero p-5 mb-4">
+    <h1 class="display-5 fw-bold">Revivez vos rêves</h1>
+    <p class="lead mb-4">
+      Racontez votre rêve à voix haute au réveil : Dreamcatcher le transcrit,
+      identifie son émotion et le transforme en image ou en courte vidéo.
+    </p>
+
+    {% if not user.is_authenticated %}
+      <a href="{% url 'inscription' %}" class="btn btn-light btn-lg me-2">Créer un compte</a>
+      <a href="{% url 'connexion' %}" class="btn btn-outline-light btn-lg">Se connecter</a>
+    {% elif not user.a_consenti %}
+      <a href="{% url 'consentement' %}" class="btn btn-light btn-lg">Donner mon consentement</a>
+    {% else %}
+      <button class="btn btn-light btn-lg" disabled>🎙️ Raconter un rêve (bientôt)</button>
+    {% endif %}
+  </section>
+
+  {% if user.is_authenticated and not user.a_consenti %}
+    <div class="alert alert-warning">
+      Avant votre premier enregistrement, vous devez lire et accepter
+      notre <a href="{% url 'confidentialite' %}" class="alert-link">politique de confidentialité</a>.
+    </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <h2 class="h5">🎙️ Racontez</h2>
+      <p>Enregistrez votre rêve avec le micro de votre téléphone, sans rien écrire.</p>
+    </div>
+    <div class="col-md-4">
+      <h2 class="h5">🎨 Revivez</h2>
+      <p>Obtenez une image ou une courte vidéo qui illustre votre récit.</p>
+    </div>
+    <div class="col-md-4">
+      <h2 class="h5">📈 Comprenez</h2>
+      <p>Suivez l'évolution des émotions de vos rêves dans le temps.</p>
+    </div>
+  </div>
 {% endblock %}

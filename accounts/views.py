@@ -1,7 +1,5 @@
-"""Vues des comptes : inscription, connexion et consentement RGPD."""
-
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect, render
@@ -9,7 +7,7 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
 
-from .forms import ConnexionForm, InscriptionForm
+from .forms import ConnexionForm, InscriptionForm, SuppressionCompteForm
 
 
 @login_not_required
@@ -95,3 +93,27 @@ def consentement(request):
         return redirect("accueil")
 
     return render(request, "accounts/consentement.html", {"next": request.GET.get("next", "")})
+
+
+@require_http_methods(["GET", "POST"])
+def supprimer_compte(request):
+    """Supprime définitivement le compte et toutes ses données (droit à l'effacement).
+
+    Les rêves sont supprimés en cascade, et leurs fichiers effacés du disque par
+    le signal ``effacer_fichiers_du_reve``. Les traces de coût des appels API sont
+    conservées, détachées de tout rêve, pour le suivi du budget.
+
+    Args:
+        request: Requête HTTP reçue.
+
+    Returns:
+        HttpResponse: La page de confirmation, ou une redirection vers l'accueil.
+    """
+    donnees = request.POST if request.method == "POST" else None
+    form = SuppressionCompteForm(request.user, donnees)
+    if request.method == "POST" and form.is_valid():
+        request.user.delete()
+        logout(request)
+        messages.success(request, "Votre compte et toutes vos données ont été supprimés.")
+        return redirect("accueil")
+    return render(request, "accounts/supprimer_compte.html", {"form": form})

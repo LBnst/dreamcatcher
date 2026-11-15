@@ -18,6 +18,7 @@ from dreams.services.image import ErreurGeneration, generer_image
 from dreams.services.prompt import ecrire_prompt_visuel
 from dreams.services.quotas import BudgetEpuise
 from dreams.services.transcription import ErreurTranscription, transcrire
+from dreams.services.video import lancer_video
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def _traiter_en_arriere_plan(reve_id):
 
 
 def traiter_reve(reve_id):
-    """Transcrit le rêve, classe son émotion, puis génère son illustration.
+    """Transcrit le rêve, classe son émotion, puis génère ou lance son illustration.
 
     Ne lève jamais d'exception : en cas d'échec, le rêve passe au statut « erreur »
     avec un message clair, et reste conservé pour une nouvelle tentative.
@@ -92,10 +93,16 @@ def _executer(reve):
         except ErreurClassification:
             logger.warning("Rêve %s conservé sans émotion.", reve.pk)
 
-    if reve.type_media == Reve.TypeMedia.IMAGE and not reve.media:
-        generer_image(reve, ecrire_prompt_visuel(reve))
-    # La génération vidéo sera branchée à l'étape 3.3.
+    if reve.type_media == Reve.TypeMedia.VIDEO:
+        if not reve.id_tache_externe:
+            lancer_video(reve, ecrire_prompt_visuel(reve))
+        # La vidéo se termine plus tard : la page du rêve en suit l'avancement.
+        reve.message_erreur = ""
+        reve.save()
+        return
 
+    if not reve.media:
+        generer_image(reve, ecrire_prompt_visuel(reve))
     reve.statut = Reve.Statut.TERMINE
     reve.message_erreur = ""
     reve.save()

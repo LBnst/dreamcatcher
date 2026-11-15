@@ -88,12 +88,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
-MISTRAL_MODELE_TRANSCRIPTION = env(
-    "MISTRAL_MODELE_TRANSCRIPTION", default="voxtral-mini-transcribe-3-0"
-)
-PRIX_TRANSCRIPTION_USD_MINUTE = env.float("PRIX_TRANSCRIPTION_USD_MINUTE", default=0.0035)
-TAUX_USD_EUR = env.float("TAUX_USD_EUR", default=1.0)
 
 LOGGING = {
     "version": 1,
@@ -114,6 +108,13 @@ QUOTA_REVES_PAR_JOUR = env.int("QUOTA_REVES_PAR_JOUR", default=10)
 QUOTA_VIDEOS_PAR_JOUR = env.int("QUOTA_VIDEOS_PAR_JOUR", default=2)
 BUDGET_MENSUEL_EUR = env.float("BUDGET_MENSUEL_EUR", default=15.0)
 
+
+# modeles
+MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
+MISTRAL_MODELE_TRANSCRIPTION = env(
+    "MISTRAL_MODELE_TRANSCRIPTION", default="voxtral-mini-transcribe-3-0"
+)
+
 MISTRAL_MODELE_PROMPT = env("MISTRAL_MODELE_PROMPT", default="mistral-small-2603")
 PRIX_PROMPT_USD_MILLION_ENTREE = env.float("PRIX_PROMPT_USD_MILLION_ENTREE", default=0.15)
 PRIX_PROMPT_USD_MILLION_SORTIE = env.float("PRIX_PROMPT_USD_MILLION_SORTIE", default=0.60)
@@ -121,3 +122,14 @@ PRIX_PROMPT_USD_MILLION_SORTIE = env.float("PRIX_PROMPT_USD_MILLION_SORTIE", def
 BFL_API_KEY = env("BFL_API_KEY", default="")
 BFL_MODELE_IMAGE = env("BFL_MODELE_IMAGE", default="flux-3-image-klein")
 PRIX_IMAGE_USD = env.float("PRIX_IMAGE_USD", default=0.009)
+
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODELE_VIDEO = env("GEMINI_MODELE_VIDEO", default="gemini-omni-1.2-flash")
+RESOLUTION_VIDEO = env("RESOLUTION_VIDEO", default="360p")
+DUREE_VIDEO_SECONDES = env.int("DUREE_VIDEO_SECONDES", default=8)
+PRIX_VIDEO_USD_SECONDE = env.float("PRIX_VIDEO_USD_SECONDE", default=0.023)
+DUREE_MAX_VIDEO = env.int("DUREE_MAX_VIDEO", default=180)  # secondes
+
+
+PRIX_TRANSCRIPTION_USD_MINUTE = env.float("PRIX_TRANSCRIPTION_USD_MINUTE", default=0.0035)
+TAUX_USD_EUR = env.float("TAUX_USD_EUR", default=1.0)

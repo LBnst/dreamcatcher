@@ -27,11 +27,15 @@ def faux_generer_image(reve, prompt):
     reve.media.save("reve.jpg", ContentFile(b"image"), save=False)
 
 
+def faux_lancer_video(reve, prompt):
+    reve.id_tache_externe = "int-1"
+
+
 @pytest.fixture
 def services(monkeypatch):
     """Simule toutes les étapes ; chaque test peut en remplacer une."""
 
-    def installer(transcrire=None, classer=None, prompt=None, image=None):
+    def installer(transcrire=None, classer=None, prompt=None, image=None, video=None):
         monkeypatch.setattr(pipeline, "transcrire", transcrire or (lambda reve: "Je volais."))
         monkeypatch.setattr(
             pipeline, "classer_emotion", classer or (lambda texte: (Reve.Emotion.HEUREUX, 0.81))
@@ -40,6 +44,7 @@ def services(monkeypatch):
             pipeline, "ecrire_prompt_visuel", prompt or (lambda reve: "A flying figure.")
         )
         monkeypatch.setattr(pipeline, "generer_image", image or faux_generer_image)
+        monkeypatch.setattr(pipeline, "lancer_video", video or faux_lancer_video)
 
     return installer
 
@@ -49,6 +54,16 @@ def lever(erreur):
         raise erreur
 
     return fonction
+
+
+def passer_en_video(reve, **champs):
+    reve.type_media = Reve.TypeMedia.VIDEO
+    for nom, valeur in champs.items():
+        setattr(reve, nom, valeur)
+    reve.save()
+
+
+# --- Image -----------------------------------------------------------------
 
 
 def test_traitement_complet(reve, services):
@@ -67,16 +82,57 @@ def test_traitement_complet(reve, services):
     assert not chemin_audio.exists()  # ...y compris le fichier sur le disque
 
 
-def test_reve_video_sans_image_pour_l_instant(reve, services):
-    services()
-    reve.type_media = Reve.TypeMedia.VIDEO
-    reve.save()
+def test_echec_de_l_image_conserve_la_transcription(reve, services):
+    services(image=lever(ErreurGeneration("Génération impossible.")))
 
     pipeline.traiter_reve(reve.pk)
 
     reve.refresh_from_db()
-    assert reve.statut == Reve.Statut.TERMINE
+    assert reve.statut == Reve.Statut.ERREUR
+    assert reve.message_erreur == "Génération impossible."
+    assert reve.transcription == "Je volais."
+    assert not reve.audio
+
+
+# --- Vidéo -----------------------------------------------------------------
+
+
+def test_reve_video_lance_la_generation(reve, services):
+    services()
+    passer_en_video(reve)
+
+    pipeline.traiter_reve(reve.pk)
+
+    reve.refresh_from_db()
+    assert reve.statut == Reve.Statut.EN_COURS  # la page suivra l'avancement
+    assert reve.id_tache_externe == "int-1"
+    assert reve.transcription == "Je volais."
     assert not reve.media
+
+
+def test_video_deja_lancee_n_est_pas_relancee(reve, services):
+    services(video=lever(AssertionError("la vidéo ne doit pas être relancée")))
+    passer_en_video(reve, id_tache_externe="int-9")
+
+    pipeline.traiter_reve(reve.pk)
+
+    reve.refresh_from_db()
+    assert reve.statut == Reve.Statut.EN_COURS
+    assert reve.id_tache_externe == "int-9"
+
+
+def test_echec_du_lancement_video(reve, services):
+    services(video=lever(ErreurGeneration("Vidéo impossible.")))
+    passer_en_video(reve)
+
+    pipeline.traiter_reve(reve.pk)
+
+    reve.refresh_from_db()
+    assert reve.statut == Reve.Statut.ERREUR
+    assert reve.message_erreur == "Vidéo impossible."
+
+
+# --- Erreurs et reprise ----------------------------------------------------
 
 
 def test_echec_de_transcription_conserve_le_reve_et_l_audio(reve, services):
@@ -99,18 +155,6 @@ def test_echec_de_classification_conserve_la_transcription(reve, services):
     assert reve.statut == Reve.Statut.TERMINE
     assert reve.transcription == "Je volais."
     assert reve.emotion == ""
-
-
-def test_echec_de_l_image_conserve_la_transcription(reve, services):
-    services(image=lever(ErreurGeneration("Génération impossible.")))
-
-    pipeline.traiter_reve(reve.pk)
-
-    reve.refresh_from_db()
-    assert reve.statut == Reve.Statut.ERREUR
-    assert reve.message_erreur == "Génération impossible."
-    assert reve.transcription == "Je volais."
-    assert not reve.audio
 
 
 def test_nouvelle_tentative_ne_refait_pas_la_transcription(reve, services):
@@ -148,6 +192,9 @@ def test_budget_epuise_met_le_reve_en_erreur(reve, services):
     assert reve.statut == Reve.Statut.ERREUR
     assert reve.message_erreur == MESSAGE_BUDGET
     assert reve.audio  # conservé : on pourra réessayer le mois prochain
+
+
+# --- Lancement du traitement -----------------------------------------------
 
 
 def test_demarrer_traitement_immediat(reve, services, settings):

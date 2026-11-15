@@ -11,7 +11,12 @@
       <div class="alert alert-info d-flex align-items-center gap-3"
            id="traitement-en-cours" data-url-statut="{% url 'statut_reve' reve.pk %}">
         <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
-        <div>Transcription et analyse de votre rêve en cours… Cette page se mettra à jour toute seule.</div>
+        <div>
+          Analyse et illustration de votre rêve en cours… Cette page se mettra à jour toute seule.
+          {% if reve.type_media == "video" %}
+            <br><small>La vidéo peut prendre jusqu'à 3 minutes.</small>
+          {% endif %}
+        </div>
       </div>
     {% elif reve.statut == "erreur" %}
       <div class="alert alert-danger">
@@ -24,8 +29,13 @@
     {% endif %}
 
     {% if reve.media %}
-      <img src="{{ reve.media.url }}" class="img-fluid rounded shadow-sm mb-4"
-           alt="Illustration générée à partir de votre rêve">
+      {% if reve.type_media == "video" %}
+        <video src="{{ reve.media.url }}" class="w-100 rounded shadow-sm mb-4"
+               controls playsinline aria-label="Vidéo générée à partir de votre rêve"></video>
+      {% else %}
+        <img src="{{ reve.media.url }}" class="img-fluid rounded shadow-sm mb-4"
+             alt="Illustration générée à partir de votre rêve">
+      {% endif %}
     {% endif %}
 
     {% if reve.emotion %}

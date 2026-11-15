@@ -10,11 +10,12 @@ def media_temporaire(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path / "media"
 
 
+# aucun test n'appelle une vraie API ni ne lance de thread
 @pytest.fixture(autouse=True)
 def aucun_appel_reel(settings):
-    """Garantit qu'aucun test n'appelle une vraie API ni ne lance de thread."""
     settings.MISTRAL_API_KEY = ""
     settings.BFL_API_KEY = ""
+    settings.GEMINI_API_KEY = ""
     settings.TRAITEMENT_EN_ARRIERE_PLAN = False
 
 

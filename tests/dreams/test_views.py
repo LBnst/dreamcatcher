@@ -302,3 +302,47 @@ def test_detail_affiche_l_image_generee(client_consentant, utilisateur_consentan
 
     assert "Illustration générée" in contenu
     assert reve.media.url in contenu
+
+
+def test_statut_suit_la_video_en_cours(client_consentant, utilisateur_consentant, monkeypatch):
+    reve = creer_reve(utilisateur_consentant, id_tache_externe="int-1")
+    suivis = []
+
+    def faux_suivi(reve_id):
+        suivis.append(reve_id)
+        Reve.objects.filter(pk=reve_id).update(statut=Reve.Statut.TERMINE)
+        return Reve.objects.get(pk=reve_id)
+
+    monkeypatch.setattr(views, "suivre_video", faux_suivi)
+
+    reponse = client_consentant.get(reverse("statut_reve", args=[reve.pk]))
+
+    assert suivis == [reve.pk]
+    assert reponse.json() == {"statut": "termine"}
+
+
+def test_statut_sans_video_ne_contacte_pas_google(
+    client_consentant, utilisateur_consentant, monkeypatch
+):
+    reve = creer_reve(utilisateur_consentant)
+    suivis = []
+    monkeypatch.setattr(views, "suivre_video", suivis.append)
+
+    reponse = client_consentant.get(reverse("statut_reve", args=[reve.pk]))
+
+    assert suivis == []
+    assert reponse.json() == {"statut": "en_cours"}
+
+
+def test_detail_affiche_la_video_generee(client_consentant, utilisateur_consentant):
+    reve = creer_reve(
+        utilisateur_consentant,
+        type_media=Reve.TypeMedia.VIDEO,
+        statut=Reve.Statut.TERMINE,
+        media=SimpleUploadedFile("reve.mp4", b"video"),
+    )
+
+    contenu = client_consentant.get(reverse("detail_reve", args=[reve.pk])).content.decode()
+
+    assert "<video" in contenu
+    assert reve.media.url in contenu

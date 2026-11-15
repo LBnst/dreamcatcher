@@ -69,7 +69,7 @@ def statuts_enregistres():
 
 
 def test_transcription_reussie(reve, faux_post):
-    faux = faux_post(SUCCES)
+    faux_post(SUCCES)
 
     texte = transcrire(reve)
 

@@ -7,6 +7,8 @@ services:
       POSTGRES_PASSWORD: dreamcatcher
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - .:/app
+      - hf_cache:/root/.cache/huggingface
     ports:
       - "5432:5432"
     healthcheck:
@@ -32,3 +34,4 @@ services:
 volumes:
 #données restent enregistrées quand la base est arrêtée
   pgdata:
+  hf_cache:

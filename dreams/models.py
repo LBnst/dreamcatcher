@@ -11,7 +11,7 @@ class Reve(models.Model):
     Attributes:
         utilisateur: Propriétaire du rêve ; ses rêves sont supprimés avec son compte.
         date_reve: Nuit du rêve, utilisée pour les filtres par date.
-        audio: Récit enregistré, supprimé dès la fin du traitement (RGPD)
+        audio: Récit enregistré, supprimé dès la fin du traitement (RGPD).
         transcription: Texte renvoyé par l'API de transcription.
         emotion: Émotion dominante détectée (filtre par humeur).
         score_emotion: Confiance du modèle de classification, entre 0 et 1.
@@ -19,6 +19,7 @@ class Reve(models.Model):
         media: Fichier de l'image ou de la vidéo générée.
         id_tache_externe: Identifiant de la génération vidéo chez le fournisseur.
         statut: Avancement du traitement.
+        message_erreur: Explication affichée à l'utilisateur si le traitement échoue.
         date_creation: Horodatage de création.
     """
 
@@ -39,6 +40,15 @@ class Reve(models.Model):
         TERMINE = "termine", "Terminé"
         ERREUR = "erreur", "Erreur"
 
+    ICONES_EMOTION = {
+        "heureux": "😊",
+        "triste": "😢",
+        "stressant": "😰",
+        "effrayant": "😱",
+        "neutre": "😐",
+        "colere": "😠",
+    }
+
     utilisateur = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reves"
     )
@@ -51,6 +61,7 @@ class Reve(models.Model):
     media = models.FileField(upload_to="reves/%Y/%m/", blank=True)
     id_tache_externe = models.CharField(max_length=255, blank=True)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_COURS)
+    message_erreur = models.CharField(max_length=255, blank=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -65,6 +76,11 @@ class Reve(models.Model):
 
     def __str__(self):
         return f"Rêve du {self.date_reve:%d/%m/%Y} ({self.utilisateur})"
+
+    @property
+    def icone_emotion(self):
+        """str: Icône correspondant à l'émotion détectée (vide si aucune)."""
+        return self.ICONES_EMOTION.get(self.emotion, "")
 
 
 class AppelApi(models.Model):

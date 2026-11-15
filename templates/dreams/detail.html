@@ -1,21 +1,45 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block titre %}Rêve du {{ reve.date_reve|date:"d/m/Y" }} – Dreamcatcher{% endblock %}
 
 {% block contenu %}
   <div class="col-lg-8">
-    <h1 class="h3">Rêve du {{ reve.date_reve|date:"j F Y" }}</h1>
-    <p>
-      <span class="badge text-bg-secondary">{{ reve.get_type_media_display }}</span>
-      <span class="badge text-bg-info">{{ reve.get_statut_display }}</span>
-    </p>
+    <h1 class="h3 mb-3">Rêve du {{ reve.date_reve|date:"j F Y" }}</h1>
 
-    {% if reve.transcription %}
-      <p>{{ reve.transcription|linebreaksbr }}</p>
-    {% else %}
-      <p class="text-body-secondary">La transcription de votre rêve sera bientôt disponible.</p>
+    {% if reve.statut == "en_cours" %}
+      <div class="alert alert-info d-flex align-items-center gap-3"
+           id="traitement-en-cours" data-url-statut="{% url 'statut_reve' reve.pk %}">
+        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+        <div>Transcription et analyse de votre rêve en cours… Cette page se mettra à jour toute seule.</div>
+      </div>
+    {% elif reve.statut == "erreur" %}
+      <div class="alert alert-danger">
+        <p class="mb-2">{{ reve.message_erreur|default:"Le traitement de votre rêve a échoué." }}</p>
+        <form method="post" action="{% url 'reessayer_reve' reve.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">🔄 Réessayer</button>
+        </form>
+      </div>
     {% endif %}
 
+    {% if reve.emotion %}
+      <p class="fs-5 mb-1">
+        <span aria-hidden="true">{{ reve.icone_emotion }}</span>
+        Émotion dominante : <strong>{{ reve.get_emotion_display }}</strong>
+        <span class="text-body-secondary fs-6">(confiance {% widthratio reve.score_emotion 1 100 %} %)</span>
+      </p>
+      <p class="small text-body-secondary">Proposition automatique, jamais un diagnostic.</p>
+    {% endif %}
+
+    {% if reve.transcription %}
+      <h2 class="h5 mt-4">Votre récit</h2>
+      <p>{{ reve.transcription|linebreaksbr }}</p>
+    {% endif %}
+
+    <p><span class="badge text-bg-secondary">Rendu choisi : {{ reve.get_type_media_display }}</span></p>
     <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
   </div>
+
+  <script src="{% static 'js/statut_reve.js' %}"></script>
 {% endblock %}

@@ -9,4 +9,5 @@ urlpatterns = [
     path("inscription/", views.inscription, name="inscription"),
     path("connexion/", views.ConnexionView.as_view(), name="connexion"),
     path("deconnexion/", LogoutView.as_view(), name="deconnexion"),
+    path("consentement/", views.consentement, name="consentement"),
 ]

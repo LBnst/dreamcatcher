@@ -1,0 +1,26 @@
+/* Styles propres à Dreamcatcher, en complément de Bootstrap. */
+
+:root {
+  --dc-nuit: #1e1b4b;
+  --dc-lavande: #a5b4fc;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+.dc-hero {
+  background: linear-gradient(135deg, var(--dc-nuit), #4338ca 60%, #7c3aed);
+  color: #fff;
+  border-radius: 1rem;
+}
+
+.dc-hero .lead {
+  color: var(--dc-lavande);
+}

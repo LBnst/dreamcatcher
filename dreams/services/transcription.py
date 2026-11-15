@@ -14,6 +14,7 @@ import httpx
 from django.conf import settings
 
 from dreams.models import AppelApi
+from dreams.services.quotas import verifier_budget
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +53,12 @@ def transcrire(reve):
     Raises:
         ErreurTranscription: Si l'API est injoignable, refuse la requête,
             signale un quota dépassé ou ne détecte aucune parole.
+        BudgetEpuise: Si le budget mensuel est atteint (aucun appel n'est fait).
     """
     if not settings.MISTRAL_API_KEY:
         logger.error("MISTRAL_API_KEY absente : transcription impossible.")
         raise ErreurTranscription(MESSAGE_INDISPONIBLE)
+    verifier_budget()
 
     with reve.audio.open("rb") as fichier:
         contenu = fichier.read()

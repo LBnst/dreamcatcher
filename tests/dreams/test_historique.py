@@ -98,3 +98,74 @@ def test_lien_mes_reves_dans_la_navigation(client_connecte):
     contenu = client_connecte.get(reverse("accueil")).content.decode()
 
     assert reverse("historique") in contenu
+
+
+# --- Filtres ---------------------------------------------------------------
+
+
+def filtrer(client, **parametres):
+    return client.get(reverse("historique"), parametres)
+
+
+def test_filtre_par_emotion(client_connecte, utilisateur):
+    triste = creer_reve(utilisateur, emotion=Reve.Emotion.TRISTE)
+    creer_reve(utilisateur, emotion=Reve.Emotion.HEUREUX)
+
+    page = filtrer(client_connecte, emotion="triste").context["page"]
+
+    assert list(page.object_list) == [triste]
+
+
+def test_filtre_par_periode(client_connecte, utilisateur):
+    creer_reve(utilisateur, jours=0)  # 1er novembre
+    milieu = creer_reve(utilisateur, jours=10)  # 11 novembre
+    creer_reve(utilisateur, jours=20)  # 21 novembre
+
+    page = filtrer(client_connecte, debut="2026-11-05", fin="2026-11-15").context["page"]
+
+    assert list(page.object_list) == [milieu]
+
+
+def test_filtre_par_mot_cle_sans_tenir_compte_des_majuscules(client_connecte, utilisateur):
+    foret = creer_reve(utilisateur, transcription="Je marchais dans une FORÊT sombre.")
+    creer_reve(utilisateur, transcription="Je nageais dans la mer.")
+
+    page = filtrer(client_connecte, q="forêt").context["page"]
+
+    assert list(page.object_list) == [foret]
+
+
+def test_filtres_combines(client_connecte, utilisateur):
+    attendu = creer_reve(utilisateur, emotion=Reve.Emotion.TRISTE, transcription="La mer.")
+    creer_reve(utilisateur, emotion=Reve.Emotion.HEUREUX, transcription="La mer.")
+    creer_reve(utilisateur, emotion=Reve.Emotion.TRISTE, transcription="La forêt.")
+
+    page = filtrer(client_connecte, emotion="triste", q="mer").context["page"]
+
+    assert list(page.object_list) == [attendu]
+
+
+def test_periode_inversee_signalee_sans_filtrer(client_connecte, utilisateur):
+    creer_reve(utilisateur)
+
+    reponse = filtrer(client_connecte, debut="2026-11-20", fin="2026-11-01")
+
+    assert "doit précéder" in reponse.content.decode()
+    assert len(reponse.context["page"].object_list) == 1
+
+
+def test_aucun_resultat(client_connecte, utilisateur):
+    creer_reve(utilisateur, emotion=Reve.Emotion.HEUREUX)
+
+    contenu = filtrer(client_connecte, emotion="colere").content.decode()
+
+    assert "Aucun rêve ne correspond" in contenu
+
+
+def test_la_pagination_conserve_les_filtres(client_connecte, utilisateur):
+    for jour in range(12):
+        creer_reve(utilisateur, jours=jour, emotion=Reve.Emotion.TRISTE)
+
+    contenu = filtrer(client_connecte, emotion="triste").content.decode()
+
+    assert "emotion=triste&amp;page=2" in contenu

@@ -23,3 +23,9 @@ def test_accueil_demande_le_consentement_si_absent(client):
     contenu = client.get(reverse("accueil")).content.decode()
 
     assert "Donner mon consentement" in contenu
+
+
+def test_mode_sombre_applique(client):
+    contenu = client.get(reverse("accueil")).content.decode()
+
+    assert 'data-bs-theme="dark"' in contenu

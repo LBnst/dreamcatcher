@@ -8,17 +8,18 @@ from django.views.decorators.http import require_GET, require_POST
 
 from accounts.decorators import consentement_requis
 
-from .forms import ReveForm
+from .forms import FiltresForm, ReveForm
 from .models import Reve
 from .services.pipeline import demarrer_traitement
 from .services.quotas import MESSAGE_BUDGET, budget_atteint, message_quota
+from .services.statistiques import statistiques
 from .services.video import suivre_video
 
 TAILLE_PAGE_HISTORIQUE = 10
 
 
 def historique(request):
-    """Liste les rêves de l'utilisateur, du plus récent au plus ancien, 10 par page.
+    """Liste les rêves de l'utilisateur, filtrables, du plus récent au plus ancien.
 
     Accessible même sans consentement : chacun doit pouvoir consulter ses
     propres données (droit d'accès RGPD).
@@ -29,9 +30,14 @@ def historique(request):
     Returns:
         HttpResponse: La page de l'historique.
     """
-    reves = Reve.objects.filter(utilisateur=request.user)
+    filtres = FiltresForm(request.GET or None)
+    reves = filtres.filtrer(Reve.objects.filter(utilisateur=request.user))
     page = Paginator(reves, TAILLE_PAGE_HISTORIQUE).get_page(request.GET.get("page"))
-    return render(request, "dreams/historique.html", {"page": page})
+
+    parametres = request.GET.copy()
+    parametres.pop("page", None)
+    contexte = {"page": page, "filtres": filtres, "parametres": parametres.urlencode()}
+    return render(request, "dreams/historique.html", contexte)
 
 
 @consentement_requis
@@ -157,3 +163,36 @@ def reessayer_reve(request, pk):
     reve.save(update_fields=["statut", "message_erreur"])
     demarrer_traitement(reve)
     return redirect("detail_reve", pk=reve.pk)
+
+
+@require_POST
+def supprimer_reve(request, pk):
+    """Supprime définitivement un rêve, uniquement pour son propriétaire.
+
+    Le signal ``effacer_fichiers_du_reve`` efface l'audio, l'image ou la vidéo ;
+    les traces de coût sont conservées, détachées du rêve, pour le suivi du budget.
+    Aucun consentement n'est exigé : on peut toujours effacer ses données.
+
+    Args:
+        request: Requête HTTP reçue.
+        pk: Identifiant du rêve.
+
+    Returns:
+        HttpResponse: Redirection vers l'historique.
+    """
+    reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    reve.delete()
+    messages.success(request, "Le rêve a été supprimé.")
+    return redirect("historique")
+
+
+def tableau_de_bord(request):
+    """Affiche les statistiques des rêves de l'utilisateur.
+
+    Args:
+        request: Requête HTTP reçue.
+
+    Returns:
+        HttpResponse: Le tableau de bord.
+    """
+    return render(request, "dreams/tableau_de_bord.html", {"stats": statistiques(request.user)})

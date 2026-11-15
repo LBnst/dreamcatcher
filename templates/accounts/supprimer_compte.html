@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block titre %}Supprimer mon compte – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="col-lg-7">
+    <h1 class="h3 mb-3">Supprimer mon compte</h1>
+
+    <div class="alert alert-danger">
+      <p class="mb-2"><strong>Cette action est définitive.</strong> Seront effacés :</p>
+      <ul class="mb-0">
+        <li>votre compte ({{ user.email }}) et votre consentement ;</li>
+        <li>tous vos rêves : enregistrements audio, transcriptions et émotions ;</li>
+        <li>toutes les images et vidéos générées.</li>
+      </ul>
+    </div>
+
+    <p class="small text-body-secondary">
+      Seules des traces techniques anonymes (date, durée et coût des appels aux services
+      d'IA) sont conservées pour le suivi du budget : elles ne contiennent aucune donnée
+      vous concernant.
+    </p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.mot_de_passe.id_for_label }}">
+          {{ form.mot_de_passe.label }}
+        </label>
+        {{ form.mot_de_passe }}
+        {{ form.mot_de_passe.errors }}
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+        <a href="{% url 'historique' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

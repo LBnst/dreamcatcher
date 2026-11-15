@@ -45,3 +45,39 @@ class InscriptionForm(BootstrapMixin, UserCreationForm):
 
 class ConnexionForm(BootstrapMixin, AuthenticationForm):
     """Connexion par e-mail et mot de passe."""
+
+
+class SuppressionCompteForm(forms.Form):
+    """Confirmation de la suppression du compte par le mot de passe."""
+
+    mot_de_passe = forms.CharField(
+        label="Confirmez avec votre mot de passe",
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "autocomplete": "current-password"}
+        ),
+    )
+
+    def __init__(self, utilisateur, *args, **kwargs):
+        """Initialise le formulaire pour un utilisateur donné.
+
+        Args:
+            utilisateur: Utilisateur qui demande la suppression de son compte.
+            *args: Arguments positionnels du formulaire Django.
+            **kwargs: Arguments nommés du formulaire Django.
+        """
+        super().__init__(*args, **kwargs)
+        self.utilisateur = utilisateur
+
+    def clean_mot_de_passe(self):
+        """Vérifie le mot de passe saisi.
+
+        Returns:
+            str: Le mot de passe, s'il est correct.
+
+        Raises:
+            forms.ValidationError: Si le mot de passe est incorrect.
+        """
+        mot_de_passe = self.cleaned_data["mot_de_passe"]
+        if not self.utilisateur.check_password(mot_de_passe):
+            raise forms.ValidationError("Mot de passe incorrect.")
+        return mot_de_passe

@@ -10,4 +10,5 @@ urlpatterns = [
     path("connexion/", views.ConnexionView.as_view(), name="connexion"),
     path("deconnexion/", LogoutView.as_view(), name="deconnexion"),
     path("consentement/", views.consentement, name="consentement"),
+    path("supprimer/", views.supprimer_compte, name="supprimer_compte"),
 ]

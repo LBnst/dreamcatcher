@@ -16,11 +16,22 @@ from dreams.services.transcription import ErreurTranscription
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def reve():
+def creer_reve(valide):
     utilisateur = get_user_model().objects.create_user(email="nom@exemple.fr", password="x")
     audio = SimpleUploadedFile("reve.webm", b"faux audio")
-    return Reve.objects.create(utilisateur=utilisateur, audio=audio)
+    return Reve.objects.create(utilisateur=utilisateur, audio=audio, valide=valide)
+
+
+@pytest.fixture
+def reve():
+    """Rêve déjà vérifié par l'utilisateur : le pipeline va jusqu'au visuel."""
+    return creer_reve(valide=True)
+
+
+@pytest.fixture
+def reve_a_verifier():
+    """Rêve qui vient d'être enregistré : le pipeline s'arrête avant le visuel."""
+    return creer_reve(valide=False)
 
 
 def faux_generer_image(reve, prompt):
@@ -146,15 +157,16 @@ def test_echec_de_transcription_conserve_le_reve_et_l_audio(reve, services):
     assert reve.audio  # conservé pour une nouvelle tentative
 
 
-def test_echec_de_classification_conserve_la_transcription(reve, services):
+def test_echec_de_classification_conserve_la_transcription(reve_a_verifier, services):
     services(classer=lever(ErreurClassification("modèle absent")))
 
-    pipeline.traiter_reve(reve.pk)
+    pipeline.traiter_reve(reve_a_verifier.pk)
 
-    reve.refresh_from_db()
-    assert reve.statut == Reve.Statut.TERMINE
-    assert reve.transcription == "Je volais."
-    assert reve.emotion == ""
+    reve_a_verifier.refresh_from_db()
+    # Le rêve attend la vérification : l'utilisateur choisira lui-même l'émotion.
+    assert reve_a_verifier.statut == Reve.Statut.A_VALIDER
+    assert reve_a_verifier.transcription == "Je volais."
+    assert reve_a_verifier.emotion == ""
 
 
 def test_nouvelle_tentative_ne_refait_pas_la_transcription(reve, services):

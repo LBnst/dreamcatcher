@@ -1,19 +1,13 @@
-/* Styles propres à Dreamcatcher, en complément de Bootstrap. */
-
-/* Couleurs des émotions dans les graphiques : palette validée sur fond sombre
-   pour les principales formes de daltonisme. */
 :root {
+  --dc-nuit: #1e1b4b;
+  --dc-lavande: #ddd6fe;
+
   --emotion-triste: #3987e5;
   --emotion-stressant: #d95926;
   --emotion-neutre: #199e70;
   --emotion-heureux: #c98500;
   --emotion-effrayant: #9085e9;
   --emotion-colere: #e66767;
-}
-
-.dc-graphique {
-  position: relative;
-  height: 320px;
 }
 
 body {
@@ -59,15 +53,23 @@ main {
   vertical-align: -0.25em;
 }
 
+.dc-graphique {
+  position: relative;
+  height: 320px;
+}
 
 .dc-progression-transcription {
-  width: 17%;
+  width: 12%;
 }
 
 .dc-progression-emotion {
-  width: 50%;
+  width: 37%;
+}
+
+.dc-progression-validation {
+  width: 62%;
 }
 
 .dc-progression-generation {
-  width: 83%;
+  width: 87%;
 }

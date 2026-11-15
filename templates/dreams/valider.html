@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block titre %}Vérifier mon rêve – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="col-lg-8">
+    <h1 class="h3 mb-3">Vérifier mon rêve du {{ reve.date_reve|date:"j F Y" }}</h1>
+    <p class="text-body-secondary">
+      Corrigez si besoin la transcription et l'émotion : elles servent à créer
+      {% if reve.type_media == "video" %}la vidéo{% else %}l'image{% endif %} de votre rêve.
+    </p>
+
+    <form method="post" class="card">
+      <div class="card-body">
+        {% csrf_token %}
+        {% for champ in formulaire %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+            {{ champ }}
+            {% for erreur in champ.errors %}
+              <div class="text-danger small mt-1">{{ erreur }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">✨ Générer le visuel</button>
+          <a href="{% url 'detail_reve' reve.pk %}" class="btn btn-outline-secondary">Plus tard</a>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}

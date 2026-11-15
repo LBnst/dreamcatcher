@@ -56,6 +56,8 @@
                 <span class="badge text-bg-danger">Erreur</span>
               {% elif reve.statut == "en_cours" %}
                 <span class="badge text-bg-info">En cours</span>
+              {% elif reve.statut == "a_valider" %}
+                <span class="badge text-bg-warning">À valider</span>
               {% endif %}
             </div>
             {% if reve.emotion %}

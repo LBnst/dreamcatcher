@@ -31,31 +31,40 @@ def test_etape_transcription(utilisateur):
     reve = creer(utilisateur)
 
     assert reve.etape_courante == "transcription"
-    assert etats(reve) == ["en_cours", "a_venir", "a_venir"]
-    assert reve.pourcentage_progression == 17
+    assert etats(reve) == ["en_cours", "a_venir", "a_venir", "a_venir"]
+    assert reve.pourcentage_progression == 12
 
 
 def test_etape_emotion(utilisateur):
     reve = creer(utilisateur, transcription="Un rêve.")
 
-    assert reve.etape_courante == "emotion"
-    assert etats(reve) == ["fait", "en_cours", "a_venir"]
-    assert reve.pourcentage_progression == 50
+    assert etats(reve) == ["fait", "en_cours", "a_venir", "a_venir"]
+    assert reve.pourcentage_progression == 37
+
+
+def test_etape_validation(utilisateur):
+    reve = creer(utilisateur, transcription="Un rêve.", statut=Reve.Statut.A_VALIDER)
+
+    assert reve.etape_courante == "validation"
+    assert etats(reve) == ["fait", "fait", "en_cours", "a_venir"]
+    assert reve.pourcentage_progression == 62
 
 
 def test_etape_generation_d_une_video(utilisateur):
-    reve = creer(utilisateur, transcription="Un rêve.", emotion="heureux", type_media="video")
+    reve = creer(
+        utilisateur, transcription="Un rêve.", emotion="heureux", valide=True, type_media="video"
+    )
 
-    assert etats(reve) == ["fait", "fait", "en_cours"]
+    assert etats(reve) == ["fait", "fait", "fait", "en_cours"]
     assert reve.etapes[-1]["libelle"] == "Création de la vidéo"
-    assert reve.pourcentage_progression == 83
+    assert reve.pourcentage_progression == 87
 
 
 def test_reve_termine(utilisateur):
     reve = creer(utilisateur, statut=Reve.Statut.TERMINE)
 
     assert reve.etape_courante is None
-    assert etats(reve) == ["fait", "fait", "fait"]
+    assert etats(reve) == ["fait", "fait", "fait", "fait"]
     assert reve.pourcentage_progression == 100
 
 
@@ -64,7 +73,7 @@ def test_api_de_progression(client_connecte, utilisateur):
 
     reponse = client_connecte.get(reverse("progression_reve", args=[reve.pk]))
 
-    assert reponse.json() == {"statut": "en_cours", "etape": "emotion", "pourcentage": 50}
+    assert reponse.json() == {"statut": "en_cours", "etape": "emotion", "pourcentage": 37}
 
 
 def test_api_reservee_au_proprietaire(client, utilisateur):

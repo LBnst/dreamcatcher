@@ -8,6 +8,33 @@
     <a href="{% url 'nouveau_reve' %}" class="btn btn-primary">🎙️ Raconter un rêve</a>
   </div>
 
+  <form method="get" class="row g-2 align-items-end mb-3" aria-label="Filtrer mes rêves">
+    {% if filtres.non_field_errors %}
+      <div class="col-12">
+        <div class="alert alert-warning mb-0">{{ filtres.non_field_errors|join:" " }}</div>
+      </div>
+    {% endif %}
+    {% for champ in filtres %}
+      <div class="col-6 col-md">
+        <label class="form-label small mb-1" for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+        {{ champ }}
+      </div>
+    {% endfor %}
+    <div class="col-12 col-md-auto d-flex gap-2">
+      <button type="submit" class="btn btn-outline-primary">Filtrer</button>
+      {% if filtres.actif %}
+        <a href="{% url 'historique' %}" class="btn btn-link">Réinitialiser</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if filtres.actif %}
+    <p class="small text-body-secondary">
+      {{ page.paginator.count }} rêve{{ page.paginator.count|pluralize }}
+      trouvé{{ page.paginator.count|pluralize }}.
+    </p>
+  {% endif %}
+
   {% if page.object_list %}
     <div class="list-group mb-4">
       {% for reve in page.object_list %}
@@ -47,7 +74,8 @@
         <ul class="pagination justify-content-center">
           {% if page.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ page.previous_page_number }}">Précédent</a>
+              <a class="page-link"
+                 href="?{% if parametres %}{{ parametres }}&amp;{% endif %}page={{ page.previous_page_number }}">Précédent</a>
             </li>
           {% endif %}
           <li class="page-item disabled">
@@ -55,12 +83,18 @@
           </li>
           {% if page.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ page.next_page_number }}">Suivant</a>
+              <a class="page-link"
+                 href="?{% if parametres %}{{ parametres }}&amp;{% endif %}page={{ page.next_page_number }}">Suivant</a>
             </li>
           {% endif %}
         </ul>
       </nav>
     {% endif %}
+  {% elif filtres.actif %}
+    <div class="text-center py-5">
+      <p class="fs-5">Aucun rêve ne correspond à ces filtres.</p>
+      <a href="{% url 'historique' %}" class="btn btn-outline-secondary">Voir tous mes rêves</a>
+    </div>
   {% else %}
     <div class="text-center py-5">
       <p class="fs-5">Vous n'avez encore raconté aucun rêve.</p>

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titre %}Tableau de bord – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <h1 class="h3 mb-4">Tableau de bord</h1>
+
+  {% if stats.total %}
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="card h-100"><div class="card-body">
+          <p class="small text-body-secondary mb-1">Rêves racontés</p>
+          <p class="display-6 mb-0">{{ stats.total }}</p>
+        </div></div>
+      </div>
+      <div class="col-sm-4">
+        <div class="card h-100"><div class="card-body">
+          <p class="small text-body-secondary mb-1">Ce mois-ci</p>
+          <p class="display-6 mb-0">{{ stats.ce_mois }}</p>
+        </div></div>
+      </div>
+      <div class="col-sm-4">
+        <div class="card h-100"><div class="card-body">
+          <p class="small text-body-secondary mb-1">Émotion la plus fréquente</p>
+          {% if stats.emotion_dominante %}
+            <p class="fs-3 mb-0">
+              <span aria-hidden="true">{{ stats.emotion_dominante.icone }}</span>
+              {{ stats.emotion_dominante.libelle }}
+            </p>
+          {% else %}
+            <p class="fs-3 mb-0">—</p>
+          {% endif %}
+        </div></div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card h-100"><div class="card-body">
+          <h2 class="h6">Évolution des émotions sur six mois</h2>
+          <div class="dc-graphique">
+            <canvas id="graphique-evolution" role="img"
+                    aria-label="Nombre de rêves par mois et par émotion, sur les six derniers mois"></canvas>
+          </div>
+        </div></div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+          <h2 class="h6">Répartition des émotions</h2>
+          <div class="dc-graphique">
+            <canvas id="graphique-repartition" role="img"
+                    aria-label="Nombre total de rêves pour chaque émotion"></canvas>
+          </div>
+        </div></div>
+      </div>
+    </div>
+
+    <details class="mt-4">
+      <summary>Voir les données sous forme de tableau</summary>
+      <div class="table-responsive mt-2">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th scope="col">Mois</th>
+              {% for serie in stats.evolution.series %}
+                <th scope="col">{{ serie.libelle }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for ligne in stats.tableau %}
+              <tr>
+                <th scope="row">{{ ligne.mois|capfirst }}</th>
+                {% for valeur in ligne.valeurs %}<td>{{ valeur }}</td>{% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    {{ stats|json_script:"donnees-tableau-de-bord" }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/tableau_de_bord.js' %}"></script>
+  {% else %}
+    <div class="text-center py-5">
+      <p class="fs-5">Aucun rêve pour l'instant : vos statistiques apparaîtront ici.</p>
+      <a href="{% url 'nouveau_reve' %}" class="btn btn-primary">Raconter mon premier rêve</a>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -73,3 +73,74 @@ class ReveForm(forms.ModelForm):
         if date_reve > timezone.localdate():
             raise forms.ValidationError("La date du rêve ne peut pas être dans le futur.")
         return date_reve
+
+
+class FiltresForm(forms.Form):
+    """Filtres de l'historique : période, émotion et mot-clé, tous facultatifs."""
+
+    debut = forms.DateField(
+        label="Du",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
+    )
+    fin = forms.DateField(
+        label="Au",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}, format="%Y-%m-%d"),
+    )
+    emotion = forms.ChoiceField(
+        label="Émotion",
+        required=False,
+        choices=[("", "Toutes"), *Reve.Emotion.choices],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    q = forms.CharField(
+        label="Mot-clé",
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={"type": "search", "class": "form-control", "placeholder": "forêt, mer…"}
+        ),
+    )
+
+    def clean(self):
+        """Vérifie que la période est dans le bon ordre.
+
+        Returns:
+            dict: Les données nettoyées.
+
+        Raises:
+            forms.ValidationError: Si la date de début est après la date de fin.
+        """
+        donnees = super().clean()
+        debut, fin = donnees.get("debut"), donnees.get("fin")
+        if debut and fin and debut > fin:
+            raise forms.ValidationError("La date de début doit précéder la date de fin.")
+        return donnees
+
+    @property
+    def actif(self):
+        """bool: Vrai si au moins un filtre valide est renseigné."""
+        return self.is_valid() and any(self.cleaned_data.values())
+
+    def filtrer(self, reves):
+        """Applique les filtres valides à un ensemble de rêves.
+
+        Args:
+            reves: QuerySet des rêves de l'utilisateur.
+
+        Returns:
+            QuerySet: Les rêves filtrés (inchangés si les filtres sont invalides).
+        """
+        if not self.is_valid():
+            return reves
+        donnees = self.cleaned_data
+        if donnees["debut"]:
+            reves = reves.filter(date_reve__gte=donnees["debut"])
+        if donnees["fin"]:
+            reves = reves.filter(date_reve__lte=donnees["fin"])
+        if donnees["emotion"]:
+            reves = reves.filter(emotion=donnees["emotion"])
+        if donnees["q"].strip():
+            reves = reves.filter(transcription__icontains=donnees["q"].strip())
+        return reves

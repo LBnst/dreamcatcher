@@ -54,9 +54,35 @@
 
     <p><span class="badge text-bg-secondary">Rendu choisi : {{ reve.get_type_media_display }}</span></p>
 
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
       <a href="{% url 'historique' %}" class="btn btn-outline-secondary">← Mes rêves</a>
       <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
+      <button type="button" class="btn btn-outline-danger ms-auto"
+              data-bs-toggle="modal" data-bs-target="#confirmation-suppression">
+        🗑️ Supprimer ce rêve
+      </button>
+    </div>
+  </div>
+
+  <div class="modal fade" id="confirmation-suppression" tabindex="-1"
+       aria-labelledby="titre-suppression" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titre-suppression">Supprimer ce rêve ?</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          Le récit, l'émotion et l'illustration seront effacés définitivement.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <form method="post" action="{% url 'supprimer_reve' reve.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 

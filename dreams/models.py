@@ -50,6 +50,52 @@ class Reve(models.Model):
         "colere": "😠",
     }
 
+    ETAPES_TRAITEMENT = ("transcription", "emotion", "generation")
+
+    @property
+    def etape_courante(self):
+        """Str | None: Étape du traitement en cours, ou None si le rêve n'est plus en cours."""
+        if self.statut != self.Statut.EN_COURS:
+            return None
+        if not self.transcription:
+            return "transcription"
+        if not self.emotion:
+            return "emotion"
+        return "generation"
+
+    @property
+    def etapes(self):
+        """list[dict]: Chaque étape avec son libellé et son état (fait, en_cours, a_venir)."""
+        courante = self.etape_courante
+        index_courant = (
+            self.ETAPES_TRAITEMENT.index(courante) if courante else len(self.ETAPES_TRAITEMENT)
+        )
+        media = "la vidéo" if self.type_media == "video" else "l'image"
+        libelles = {
+            "transcription": "Transcription de votre récit",
+            "emotion": "Analyse de l'émotion",
+            "generation": f"Création de {media}",
+        }
+        etapes = []
+        for index, code in enumerate(self.ETAPES_TRAITEMENT):
+            if index < index_courant:
+                etat = "fait"
+            elif index == index_courant:
+                etat = "en_cours"
+            else:
+                etat = "a_venir"
+            etapes.append({"code": code, "libelle": libelles[code], "etat": etat})
+        return etapes
+
+    @property
+    def pourcentage_progression(self):
+        """int: Avancement estimé, l'étape en cours comptant pour moitié."""
+        courante = self.etape_courante
+        if courante is None:
+            return 100
+        index = self.ETAPES_TRAITEMENT.index(courante)
+        return round((index + 0.5) * 100 / len(self.ETAPES_TRAITEMENT))
+
     utilisateur = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reves"
     )
@@ -65,6 +111,7 @@ class Reve(models.Model):
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_COURS)
     message_erreur = models.CharField(max_length=255, blank=True)
     date_creation = models.DateTimeField(auto_now_add=True)
+    emotion_corrigee = models.BooleanField("émotion corrigée par l'utilisateur", default=False)
 
     class Meta:
         verbose_name = "rêve"

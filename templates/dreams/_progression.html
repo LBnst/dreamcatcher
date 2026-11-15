@@ -1,0 +1,30 @@
+{% load static %}
+<div class="card mb-4" id="progression"
+     data-url="{% url 'progression_reve' reve.pk %}"
+     data-etape="{{ reve.etape_courante|default:'' }}">
+  <div class="card-body">
+    <h2 class="h6">Votre rêve prend forme…</h2>
+    <div class="progress mb-3" role="progressbar" aria-label="Avancement du traitement"
+         aria-valuenow="{{ reve.pourcentage_progression }}" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-bar progress-bar-striped progress-bar-animated
+                  dc-progression-{{ reve.etape_courante }}"></div>
+    </div>
+    <ol class="list-unstyled mb-0">
+      {% for etape in reve.etapes %}
+        <li class="d-flex align-items-center gap-2 mb-1
+                   {% if etape.etat == 'a_venir' %}text-body-secondary{% endif %}">
+          {% if etape.etat == "fait" %}
+            <span aria-hidden="true">✅</span>
+          {% elif etape.etat == "en_cours" %}
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {% else %}
+            <span aria-hidden="true">⚪</span>
+          {% endif %}
+          {{ etape.libelle }}
+          {% if etape.etat == "en_cours" %}<span class="visually-hidden">(en cours)</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+<script src="{% static 'js/progression.js' %}"></script>

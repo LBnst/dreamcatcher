@@ -13,4 +13,6 @@ urlpatterns = [
     path("<int:pk>/media/", views.media_reve, name="media_reve"),
     path("<int:pk>/supprimer/", views.supprimer_reve, name="supprimer_reve"),
     path("tableau-de-bord/", views.tableau_de_bord, name="tableau_de_bord"),
+    path("<int:pk>/corriger/", views.corriger_reve, name="corriger_reve"),
+    path("<int:pk>/progression/", views.progression_reve, name="progression_reve"),
 ]

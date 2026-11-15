@@ -8,15 +8,14 @@
     <h1 class="h3 mb-3">Rêve du {{ reve.date_reve|date:"j F Y" }}</h1>
 
     {% if reve.statut == "en_cours" %}
-      <div class="alert alert-info d-flex align-items-center gap-3"
-           id="traitement-en-cours" data-url-statut="{% url 'statut_reve' reve.pk %}">
-        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
-        <div>
+      <div class="mb-4" id="traitement-en-cours" data-url-statut="{% url 'statut_reve' reve.pk %}">
+        <p class="mb-2">
           Analyse et illustration de votre rêve en cours… Cette page se mettra à jour toute seule.
           {% if reve.type_media == "video" %}
             <br><small>La vidéo peut prendre jusqu'à 3 minutes.</small>
           {% endif %}
-        </div>
+        </p>
+        {% include "dreams/_progression.html" %}
       </div>
     {% elif reve.statut == "erreur" %}
       <div class="alert alert-danger">
@@ -39,10 +38,16 @@
     {% endif %}
 
     {% if reve.emotion %}
-      <p class="fs-5 mb-1">
-        <span aria-hidden="true">{{ reve.icone_emotion }}</span>
-        Émotion dominante : <strong>{{ reve.get_emotion_display }}</strong>
-        <span class="text-body-secondary fs-6">(confiance {% widthratio reve.score_emotion 1 100 %} %)</span>
+      <p class="fs-5 mb-1 d-flex align-items-center flex-wrap gap-2">
+        {% include "dreams/_icone_emotion.html" with emotion=reve.emotion taille=32 %}
+        <span>Émotion dominante : <strong>{{ reve.get_emotion_display }}</strong></span>
+        {% if reve.emotion_corrigee %}
+          <span class="badge text-bg-secondary fs-6">corrigée par vous</span>
+        {% elif reve.score_emotion is not None %}
+          <span class="text-body-secondary fs-6">
+            (confiance {% widthratio reve.score_emotion 1 100 %} %)
+          </span>
+        {% endif %}
       </p>
       <p class="small text-body-secondary">Proposition automatique, jamais un diagnostic.</p>
     {% endif %}
@@ -57,6 +62,11 @@
     <div class="d-flex flex-wrap gap-2">
       <a href="{% url 'historique' %}" class="btn btn-outline-secondary">← Mes rêves</a>
       <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
+      {% if reve.statut != "en_cours" %}
+        <a href="{% url 'corriger_reve' reve.pk %}" class="btn btn-outline-secondary">
+          ✏️ Corriger
+        </a>
+      {% endif %}
       <button type="button" class="btn btn-outline-danger ms-auto"
               data-bs-toggle="modal" data-bs-target="#confirmation-suppression">
         🗑️ Supprimer ce rêve

@@ -38,7 +38,6 @@ def statistiques(utilisateur, aujourdhui=None):
         {
             "emotion": emotion,
             "libelle": Reve.Emotion(emotion).label,
-            "icone": Reve.ICONES_EMOTION[emotion],
             "nombre": comptes.get(emotion, 0),
         }
         for emotion in ORDRE_EMOTIONS

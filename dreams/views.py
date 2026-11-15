@@ -8,7 +8,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from accounts.decorators import consentement_requis
 
-from .forms import FiltresForm, ReveForm
+from .forms import CorrectionForm, FiltresForm, ReveForm
 from .models import Reve
 from .services.pipeline import demarrer_traitement
 from .services.quotas import MESSAGE_BUDGET, budget_atteint, message_quota
@@ -196,3 +196,56 @@ def tableau_de_bord(request):
         HttpResponse: Le tableau de bord.
     """
     return render(request, "dreams/tableau_de_bord.html", {"stats": statistiques(request.user)})
+
+
+def corriger_reve(request, pk):
+    """Permet à l'utilisateur de corriger la transcription et l'émotion d'un rêve.
+
+    Accessible même sans consentement : c'est le droit de rectification (RGPD).
+    L'illustration déjà générée n'est pas recréée, pour ne pas engager de coût.
+
+    Args:
+        request: Requête HTTP reçue.
+        pk: Identifiant du rêve.
+
+    Returns:
+        HttpResponse: Le formulaire, ou une redirection vers le détail du rêve.
+    """
+    reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    if reve.statut == Reve.Statut.EN_COURS:
+        messages.warning(request, "Ce rêve est encore en cours de traitement.")
+        return redirect("detail_reve", pk=reve.pk)
+
+    emotion_initiale = reve.emotion
+    donnees = request.POST if request.method == "POST" else None
+    formulaire = CorrectionForm(donnees, instance=reve)
+    if formulaire.is_valid():
+        reve = formulaire.save(commit=False)
+        if reve.emotion != emotion_initiale:
+            reve.emotion_corrigee = True
+        reve.save()
+        messages.success(request, "Vos corrections ont été enregistrées.")
+        return redirect("detail_reve", pk=reve.pk)
+
+    contexte = {"reve": reve, "formulaire": formulaire}
+    return render(request, "dreams/corriger.html", contexte)
+
+
+def progression_reve(request, pk):
+    """Renvoie l'avancement du traitement d'un rêve, en JSON, sans rien modifier.
+
+    Args:
+        request: Requête HTTP reçue.
+        pk: Identifiant du rêve.
+
+    Returns:
+        JsonResponse: Le statut, l'étape en cours et le pourcentage d'avancement.
+    """
+    reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    return JsonResponse(
+        {
+            "statut": reve.statut,
+            "etape": reve.etape_courante or "",
+            "pourcentage": reve.pourcentage_progression,
+        }
+    )

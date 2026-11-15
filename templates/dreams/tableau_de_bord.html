@@ -25,7 +25,7 @@
           <p class="small text-body-secondary mb-1">Émotion la plus fréquente</p>
           {% if stats.emotion_dominante %}
             <p class="fs-3 mb-0">
-              <span aria-hidden="true">{{ stats.emotion_dominante.icone }}</span>
+              {% include "dreams/_icone_emotion.html" with emotion=stats.emotion_dominante.emotion taille=32 %}
               {{ stats.emotion_dominante.libelle }}
             </p>
           {% else %}

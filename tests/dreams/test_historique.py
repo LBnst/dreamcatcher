@@ -90,7 +90,7 @@ def test_extrait_emotion_et_lien_vers_le_reve(client_connecte, utilisateur):
     contenu = afficher(client_connecte).content.decode()
 
     assert "Je volais au-dessus de la mer." in contenu
-    assert "😊" in contenu
+    assert "img/emotions/heureux.png" in contenu
     assert reverse("detail_reve", args=[reve.pk]) in contenu
 
 

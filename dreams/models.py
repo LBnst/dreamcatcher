@@ -103,6 +103,7 @@ class AppelApi(models.Model):
         TRANSCRIPTION = "transcription", "Transcription"
         IMAGE = "image", "Image"
         VIDEO = "video", "Vidéo"
+        PROMPT = "prompt", "Réécriture du prompt"
 
     class Statut(models.TextChoices):
         SUCCES = "succes", "Succès"

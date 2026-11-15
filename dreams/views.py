@@ -99,7 +99,7 @@ def reessayer_reve(request, pk):
     reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
     if reve.statut != Reve.Statut.ERREUR:
         return redirect("detail_reve", pk=reve.pk)
-    if not reve.audio:
+    if not reve.audio and not reve.transcription:
         messages.error(
             request, "L'enregistrement n'est plus disponible : racontez à nouveau votre rêve."
         )

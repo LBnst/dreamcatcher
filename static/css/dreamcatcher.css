@@ -53,3 +53,21 @@ main {
   height: 100%;
   object-fit: cover;
 }
+
+.dc-icone-emotion {
+  object-fit: contain;
+  vertical-align: -0.25em;
+}
+
+
+.dc-progression-transcription {
+  width: 17%;
+}
+
+.dc-progression-emotion {
+  width: 50%;
+}
+
+.dc-progression-generation {
+  width: 83%;
+}

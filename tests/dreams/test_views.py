@@ -201,7 +201,7 @@ def test_detail_termine_affiche_emotion_et_recit(client_consentant, utilisateur_
     contenu = client_consentant.get(reverse("detail_reve", args=[reve.pk])).content.decode()
 
     assert "Colère" in contenu
-    assert "😠" in contenu
+    assert "img/emotions/colere.png" in contenu
     assert "72 %" in contenu
     assert "Je hurlais sur mon frère." in contenu
     assert "traitement-en-cours" not in contenu

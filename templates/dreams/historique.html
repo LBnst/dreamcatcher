@@ -59,7 +59,10 @@
               {% endif %}
             </div>
             {% if reve.emotion %}
-              <div class="small">{{ reve.icone_emotion }} {{ reve.get_emotion_display }}</div>
+              <div class="small d-flex align-items-center gap-1">
+                {% include "dreams/_icone_emotion.html" with emotion=reve.emotion taille=20 %}
+                {{ reve.get_emotion_display }}
+              </div>
             {% endif %}
             <p class="mb-0 small text-body-secondary">
               {{ reve.transcription|truncatewords:25|default:"Transcription en attente." }}

@@ -39,7 +39,9 @@ omit = [
     "config/asgi.py",
     "config/wsgi.py",
     "scripts/*",
-    "gunicorn.conf.py"
+    "gunicorn.conf.py",
+    "installer.py",
+    "locustfile.py",
 ]
 
 [tool.coverage.report]

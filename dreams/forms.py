@@ -144,3 +144,22 @@ class FiltresForm(forms.Form):
         if donnees["q"].strip():
             reves = reves.filter(transcription__icontains=donnees["q"].strip())
         return reves
+
+
+class CorrectionForm(forms.ModelForm):
+    """Correction par l'utilisateur de la transcription et de l'émotion détectée."""
+
+    class Meta:
+        model = Reve
+        fields = ["transcription", "emotion"]
+        labels = {"transcription": "Transcription", "emotion": "Émotion"}
+        widgets = {
+            "transcription": forms.Textarea(attrs={"class": "form-control", "rows": 8}),
+            "emotion": forms.Select(attrs={"class": "form-select"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        """Rend les deux champs obligatoires : un rêve corrigé ne peut pas être vide."""
+        super().__init__(*args, **kwargs)
+        self.fields["transcription"].required = True
+        self.fields["emotion"].required = True

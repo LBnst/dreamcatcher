@@ -1,4 +1,4 @@
-"""Vues des rêves : création, consultation et suivi du traitement."""
+"""Vues des rêves : création, vérification, consultation et suivi du traitement."""
 
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -129,7 +129,7 @@ def statut_reve(request, pk):
         pk: Identifiant du rêve.
 
     Returns:
-        JsonResponse: ``{"statut": "en_cours" | "termine" | "erreur"}``.
+        JsonResponse: ``{"statut": "en_cours" | "a_valider" | "termine" | "erreur"}``.
     """
     reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
     if reve.statut == Reve.Statut.EN_COURS and reve.id_tache_externe:
@@ -198,6 +198,43 @@ def tableau_de_bord(request):
     return render(request, "dreams/tableau_de_bord.html", {"stats": statistiques(request.user)})
 
 
+def valider_reve(request, pk):
+    """Fait vérifier la transcription et l'émotion, puis lance la génération du visuel.
+
+    La génération (payante) n'a lieu qu'après cette vérification. La mise à jour
+    n'est faite que si le rêve est encore « à valider » : un double clic ne lance
+    pas deux générations, ni deux dépenses.
+
+    Args:
+        request: Requête HTTP reçue.
+        pk: Identifiant du rêve.
+
+    Returns:
+        HttpResponse: Le formulaire de vérification, ou une redirection vers le rêve.
+    """
+    reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    if reve.statut != Reve.Statut.A_VALIDER:
+        return redirect("detail_reve", pk=reve.pk)
+
+    emotion_initiale = reve.emotion
+    donnees = request.POST if request.method == "POST" else None
+    formulaire = CorrectionForm(donnees, instance=reve)
+    if formulaire.is_valid():
+        lance = Reve.objects.filter(pk=reve.pk, statut=Reve.Statut.A_VALIDER).update(
+            transcription=formulaire.cleaned_data["transcription"],
+            emotion=formulaire.cleaned_data["emotion"],
+            emotion_corrigee=formulaire.cleaned_data["emotion"] != emotion_initiale,
+            valide=True,
+            statut=Reve.Statut.EN_COURS,
+        )
+        if lance:
+            demarrer_traitement(reve)
+            messages.success(request, "C'est parti : votre visuel est en cours de création.")
+        return redirect("detail_reve", pk=reve.pk)
+
+    return render(request, "dreams/valider.html", {"reve": reve, "formulaire": formulaire})
+
+
 def corriger_reve(request, pk):
     """Permet à l'utilisateur de corriger la transcription et l'émotion d'un rêve.
 
@@ -212,6 +249,9 @@ def corriger_reve(request, pk):
         HttpResponse: Le formulaire, ou une redirection vers le détail du rêve.
     """
     reve = get_object_or_404(Reve, pk=pk, utilisateur=request.user)
+    if reve.statut == Reve.Statut.A_VALIDER:
+        # Avant la génération, la correction passe par la page de vérification.
+        return redirect("valider_reve", pk=reve.pk)
     if reve.statut == Reve.Statut.EN_COURS:
         messages.warning(request, "Ce rêve est encore en cours de traitement.")
         return redirect("detail_reve", pk=reve.pk)

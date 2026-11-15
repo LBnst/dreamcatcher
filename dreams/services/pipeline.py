@@ -1,7 +1,9 @@
-"""Traitement complet d'un rêve : transcription, émotion, puis illustration.
+"""Traitement d'un rêve : transcription et émotion, validation par l'utilisateur, illustration.
 
 Le traitement tourne dans un fil d'exécution (thread) séparé pour que la page réponde
 immédiatement ; la page du rêve interroge ensuite son statut toutes les 5 secondes.
+Il s'arrête une première fois après l'analyse, au statut « à valider » : l'utilisateur
+vérifie la transcription et l'émotion avant que l'illustration (payante) soit créée.
 Chaque étape réussie est conservée : une nouvelle tentative reprend là où l'échec
 s'est produit, sans refaire (ni repayer) les étapes précédentes.
 """
@@ -53,7 +55,7 @@ def _traiter_en_arriere_plan(reve_id):
 
 
 def traiter_reve(reve_id):
-    """Transcrit le rêve, classe son émotion, puis génère ou lance son illustration.
+    """Transcrit le rêve et classe son émotion, puis, une fois validé, crée son illustration.
 
     Ne lève jamais d'exception : en cas d'échec, le rêve passe au statut « erreur »
     avec un message clair, et reste conservé pour une nouvelle tentative.
@@ -74,6 +76,9 @@ def traiter_reve(reve_id):
 def _executer(reve):
     """Enchaîne les étapes qui restent à faire, puis enregistre le résultat.
 
+    S'arrête au statut « à valider » tant que l'utilisateur n'a pas vérifié la
+    transcription et l'émotion : aucune génération payante n'a lieu avant.
+
     Args:
         reve: Rêve à traiter.
 
@@ -92,6 +97,14 @@ def _executer(reve):
             reve.emotion, reve.score_emotion = classer_emotion(reve.transcription)
         except ErreurClassification:
             logger.warning("Rêve %s conservé sans émotion.", reve.pk)
+
+    if not reve.valide:
+        # Point d'arrêt : l'utilisateur vérifie la transcription et l'émotion avant
+        # toute dépense de génération. La validation relance ce même traitement.
+        reve.statut = Reve.Statut.A_VALIDER
+        reve.message_erreur = ""
+        reve.save()
+        return
 
     if reve.type_media == Reve.TypeMedia.VIDEO:
         if not reve.id_tache_externe:

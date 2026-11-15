@@ -12,7 +12,7 @@ class Reve(models.Model):
         utilisateur: Propriétaire du rêve ; ses rêves sont supprimés avec son compte.
         date_reve: Nuit du rêve, utilisée pour les filtres par date.
         audio: Récit enregistré, supprimé dès la fin du traitement (RGPD).
-        transcription: Texte renvoyé par l'API de transcription.
+        transcription: Texte renvoyé par l'API de transcription, corrigeable.
         emotion: Émotion dominante détectée (filtre par humeur).
         score_emotion: Confiance du modèle de classification, entre 0 et 1.
         type_media: Rendu choisi par l'utilisateur (image ou vidéo).
@@ -22,6 +22,9 @@ class Reve(models.Model):
         statut: Avancement du traitement.
         message_erreur: Explication affichée à l'utilisateur si le traitement échoue.
         date_creation: Horodatage de création.
+        emotion_corrigee: Vrai si l'utilisateur a changé l'émotion détectée.
+        valide: Vrai une fois la transcription et l'émotion vérifiées par l'utilisateur ;
+            la génération du visuel (payante) n'a lieu qu'après.
     """
 
     class Emotion(models.TextChoices):
@@ -40,26 +43,51 @@ class Reve(models.Model):
         EN_COURS = "en_cours", "En cours"
         TERMINE = "termine", "Terminé"
         ERREUR = "erreur", "Erreur"
+        A_VALIDER = "a_valider", "À valider"
 
-    ICONES_EMOTION = {
-        "heureux": "😊",
-        "triste": "😢",
-        "stressant": "😰",
-        "effrayant": "😱",
-        "neutre": "😐",
-        "colere": "😠",
-    }
+    ETAPES_TRAITEMENT = ("transcription", "emotion", "validation", "generation")
 
-    ETAPES_TRAITEMENT = ("transcription", "emotion", "generation")
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reves"
+    )
+    date_reve = models.DateField("nuit du rêve", default=timezone.localdate)
+    audio = models.FileField(upload_to="audio/%Y/%m/", blank=True)
+    transcription = models.TextField(blank=True)
+    emotion = models.CharField(max_length=20, choices=Emotion.choices, blank=True)
+    score_emotion = models.FloatField(null=True, blank=True)
+    type_media = models.CharField(max_length=10, choices=TypeMedia.choices, default=TypeMedia.IMAGE)
+    media = models.FileField(upload_to="reves/%Y/%m/", blank=True)
+    id_tache_externe = models.CharField(max_length=255, blank=True)
+    generation_lancee_le = models.DateTimeField(null=True, blank=True)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_COURS)
+    message_erreur = models.CharField(max_length=255, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    emotion_corrigee = models.BooleanField("émotion corrigée par l'utilisateur", default=False)
+    valide = models.BooleanField("validé par l'utilisateur avant génération", default=False)
+
+    class Meta:
+        verbose_name = "rêve"
+        verbose_name_plural = "rêves"
+        ordering = ["-date_reve", "-date_creation"]
+        # Accélèrent l'historique et le tableau de bord (filtres date et humeur).
+        indexes = [
+            models.Index(fields=["utilisateur", "date_reve"]),
+            models.Index(fields=["utilisateur", "emotion"]),
+        ]
+
+    def __str__(self):
+        return f"Rêve du {self.date_reve:%d/%m/%Y} ({self.utilisateur})"
 
     @property
     def etape_courante(self):
-        """Str | None: Étape du traitement en cours, ou None si le rêve n'est plus en cours."""
+        """Str | None: Étape en cours, ou None si le traitement est terminé ou en erreur."""
+        if self.statut == self.Statut.A_VALIDER:
+            return "validation"
         if self.statut != self.Statut.EN_COURS:
             return None
         if not self.transcription:
             return "transcription"
-        if not self.emotion:
+        if not self.valide:
             return "emotion"
         return "generation"
 
@@ -70,10 +98,11 @@ class Reve(models.Model):
         index_courant = (
             self.ETAPES_TRAITEMENT.index(courante) if courante else len(self.ETAPES_TRAITEMENT)
         )
-        media = "la vidéo" if self.type_media == "video" else "l'image"
+        media = "la vidéo" if self.type_media == self.TypeMedia.VIDEO else "l'image"
         libelles = {
             "transcription": "Transcription de votre récit",
             "emotion": "Analyse de l'émotion",
+            "validation": "Votre vérification",
             "generation": f"Création de {media}",
         }
         etapes = []
@@ -93,43 +122,8 @@ class Reve(models.Model):
         courante = self.etape_courante
         if courante is None:
             return 100
-        index = self.ETAPES_TRAITEMENT.index(courante)
-        return round((index + 0.5) * 100 / len(self.ETAPES_TRAITEMENT))
-
-    utilisateur = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reves"
-    )
-    date_reve = models.DateField("nuit du rêve", default=timezone.localdate)
-    audio = models.FileField(upload_to="audio/%Y/%m/", blank=True)
-    transcription = models.TextField(blank=True)
-    emotion = models.CharField(max_length=20, choices=Emotion.choices, blank=True)
-    score_emotion = models.FloatField(null=True, blank=True)
-    type_media = models.CharField(max_length=10, choices=TypeMedia.choices, default=TypeMedia.IMAGE)
-    media = models.FileField(upload_to="reves/%Y/%m/", blank=True)
-    id_tache_externe = models.CharField(max_length=255, blank=True)
-    generation_lancee_le = models.DateTimeField(null=True, blank=True)
-    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_COURS)
-    message_erreur = models.CharField(max_length=255, blank=True)
-    date_creation = models.DateTimeField(auto_now_add=True)
-    emotion_corrigee = models.BooleanField("émotion corrigée par l'utilisateur", default=False)
-
-    class Meta:
-        verbose_name = "rêve"
-        verbose_name_plural = "rêves"
-        ordering = ["-date_reve", "-date_creation"]
-        # Accélèrent l'historique et le tableau de bord (filtres date et humeur).
-        indexes = [
-            models.Index(fields=["utilisateur", "date_reve"]),
-            models.Index(fields=["utilisateur", "emotion"]),
-        ]
-
-    def __str__(self):
-        return f"Rêve du {self.date_reve:%d/%m/%Y} ({self.utilisateur})"
-
-    @property
-    def icone_emotion(self):
-        """str: Icône correspondant à l'émotion détectée (vide si aucune)."""
-        return self.ICONES_EMOTION.get(self.emotion, "")
+        index, nombre = self.ETAPES_TRAITEMENT.index(courante), len(self.ETAPES_TRAITEMENT)
+        return (2 * index + 1) * 100 // (2 * nombre)
 
 
 class AppelApi(models.Model):

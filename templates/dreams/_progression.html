@@ -1,6 +1,7 @@
 {% load static %}
 <div class="card mb-4" id="progression"
      data-url="{% url 'progression_reve' reve.pk %}"
+     data-url-validation="{% url 'valider_reve' reve.pk %}"
      data-etape="{{ reve.etape_courante|default:'' }}">
   <div class="card-body">
     <h2 class="h6">Votre rêve prend forme…</h2>

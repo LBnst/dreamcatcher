@@ -28,7 +28,7 @@ class Reve(models.Model):
         STRESSANT = "stressant", "Stressant"
         EFFRAYANT = "effrayant", "Effrayant"
         NEUTRE = "neutre", "Neutre"
-        ETRANGE = "etrange", "Étrange"
+        COLERE = "colere", "Colère"
 
     class TypeMedia(models.TextChoices):
         IMAGE = "image", "Image"

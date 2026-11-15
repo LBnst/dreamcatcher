@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block titre %}Inscription – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <h1 class="h3 mb-4">Créer un compte</h1>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for champ in form %}
+          <div class="mb-3">
+            {{ champ.label_tag }}
+            {{ champ }}
+            {% if champ.help_text %}<div class="form-text">{{ champ.help_text|safe }}</div>{% endif %}
+            {{ champ.errors }}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100">Créer mon compte</button>
+      </form>
+      <p class="mt-3">Déjà inscrit ? <a href="{% url 'connexion' %}">Se connecter</a></p>
+    </div>
+  </div>
+{% endblock %}

@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from dreams.models import AppelApi, Reve
 from dreams.services import transcription
+from dreams.services.quotas import BudgetEpuise
 from dreams.services.transcription import ErreurTranscription, transcrire
 
 pytestmark = pytest.mark.django_db
@@ -171,3 +172,13 @@ def test_sans_cle_api_aucun_appel(reve, faux_post, settings):
 
     assert faux.appels == []
     assert not AppelApi.objects.exists()
+
+
+def test_budget_epuise_aucun_appel(reve, faux_post, settings):
+    settings.BUDGET_MENSUEL_EUR = 0
+    faux = faux_post()
+
+    with pytest.raises(BudgetEpuise):
+        transcrire(reve)
+
+    assert faux.appels == []

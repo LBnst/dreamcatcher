@@ -140,6 +140,31 @@ def test_refuse_une_date_dans_le_futur(client_consentant):
     assert not Reve.objects.exists()
 
 
+# --- Garde-fous à l'envoi --------------------------------------------------
+
+
+def test_refuse_un_reve_si_le_quota_est_atteint(
+    client_consentant, utilisateur_consentant, settings, traitements_lances
+):
+    settings.QUOTA_REVES_PAR_JOUR = 1
+    creer_reve(utilisateur_consentant)
+
+    reponse = envoyer(client_consentant)
+
+    assert "limite" in reponse.content.decode()
+    assert Reve.objects.count() == 1
+    assert traitements_lances == []
+
+
+def test_refuse_un_reve_si_le_budget_est_atteint(client_consentant, settings):
+    settings.BUDGET_MENSUEL_EUR = 0
+
+    reponse = envoyer(client_consentant)
+
+    assert "budget mensuel" in reponse.content.decode()
+    assert not Reve.objects.exists()
+
+
 # --- Consultation ----------------------------------------------------------
 
 

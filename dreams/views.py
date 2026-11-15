@@ -10,11 +10,15 @@ from accounts.decorators import consentement_requis
 from .forms import ReveForm
 from .models import Reve
 from .services.pipeline import demarrer_traitement
+from .services.quotas import MESSAGE_BUDGET, budget_atteint, message_quota
 
 
 @consentement_requis
 def nouveau_reve(request):
     """Affiche l'enregistreur, crée le rêve et lance son traitement.
+
+    Le rêve est refusé, avec un message clair, si le budget mensuel ou le quota
+    quotidien de l'utilisateur est atteint.
 
     Args:
         request: Requête HTTP reçue.
@@ -24,13 +28,31 @@ def nouveau_reve(request):
     """
     form = ReveForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
-        reve = form.save(commit=False)
-        reve.utilisateur = request.user
-        reve.save()
-        demarrer_traitement(reve)
-        messages.success(request, "Votre rêve a bien été enregistré : son analyse commence.")
-        return redirect("detail_reve", pk=reve.pk)
+        refus = _motif_de_refus(request.user, form.cleaned_data["type_media"])
+        if refus is None:
+            reve = form.save(commit=False)
+            reve.utilisateur = request.user
+            reve.save()
+            demarrer_traitement(reve)
+            messages.success(request, "Votre rêve a bien été enregistré : son analyse commence.")
+            return redirect("detail_reve", pk=reve.pk)
+        form.add_error(None, refus)
     return render(request, "dreams/nouveau.html", {"form": form})
+
+
+def _motif_de_refus(utilisateur, type_media):
+    """Renvoie la raison d'un refus (budget ou quota atteint), ou ``None``.
+
+    Args:
+        utilisateur: Utilisateur qui envoie le rêve.
+        type_media: Rendu demandé.
+
+    Returns:
+        str | None: Le message de refus, ou ``None`` si le rêve peut être créé.
+    """
+    if budget_atteint():
+        return MESSAGE_BUDGET
+    return message_quota(utilisateur, type_media)
 
 
 def detail_reve(request, pk):

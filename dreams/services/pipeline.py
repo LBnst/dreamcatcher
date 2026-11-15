@@ -12,6 +12,7 @@ from django.db import connection
 
 from dreams.models import Reve
 from dreams.services.emotion import ErreurClassification, classer_emotion
+from dreams.services.quotas import BudgetEpuise
 from dreams.services.transcription import ErreurTranscription, transcrire
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ def traiter_reve(reve_id):
     reve = Reve.objects.get(pk=reve_id)
     try:
         _executer(reve)
-    except ErreurTranscription as erreur:
+    except (ErreurTranscription, BudgetEpuise) as erreur:
         _marquer_en_erreur(reve, str(erreur))
     except Exception:
         logger.exception("Erreur inattendue pendant le traitement du rêve %s.", reve_id)
@@ -72,6 +73,7 @@ def _executer(reve):
 
     Raises:
         ErreurTranscription: Si la transcription échoue (l'audio est alors conservé).
+        BudgetEpuise: Si le budget mensuel est atteint.
     """
     reve.transcription = transcrire(reve)
     reve.audio.delete(save=False)  # RGPD : l'audio n'est plus utile une fois transcrit

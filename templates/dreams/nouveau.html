@@ -9,7 +9,9 @@
 
     <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
-      {{ form.non_field_errors }}
+      {% if form.non_field_errors %}
+        <div class="alert alert-warning">{{ form.non_field_errors|join:" " }}</div>
+      {% endif %}
 
       <div class="card mb-4">
         <div class="card-body text-center">

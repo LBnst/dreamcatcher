@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from dreams.models import Reve
 from dreams.services import pipeline
 from dreams.services.emotion import ErreurClassification
+from dreams.services.quotas import MESSAGE_BUDGET, BudgetEpuise
 from dreams.services.transcription import ErreurTranscription
 
 pytestmark = pytest.mark.django_db
@@ -85,6 +86,17 @@ def test_erreur_inattendue_donne_un_message_clair(reve, services):
     reve.refresh_from_db()
     assert reve.statut == Reve.Statut.ERREUR
     assert reve.message_erreur == pipeline.MESSAGE_INATTENDU
+
+
+def test_budget_epuise_met_le_reve_en_erreur(reve, services):
+    services(transcrire=lever(BudgetEpuise(MESSAGE_BUDGET)))
+
+    pipeline.traiter_reve(reve.pk)
+
+    reve.refresh_from_db()
+    assert reve.statut == Reve.Statut.ERREUR
+    assert reve.message_erreur == MESSAGE_BUDGET
+    assert reve.audio  # conservé : on pourra réessayer le mois prochain
 
 
 def test_demarrer_traitement_immediat(reve, services, settings):

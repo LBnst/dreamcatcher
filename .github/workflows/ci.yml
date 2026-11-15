@@ -1,4 +1,4 @@
-#integration continue
+#integration + livraison continue
 name: CI
 
 on:
@@ -11,17 +11,17 @@ jobs:
   #conformité du code
   lint:
     name: Lint (ruff)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Machine Linux fournie gratuitement par GitHub
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v5  # Récupère le code du dépôt
+      - uses: actions/setup-python@v6  # Installe Python
         with:
           python-version: "3.12"
-          cache: pip
+          cache: pip  # Garde les paquets en cache pour accélérer les prochaines exécutions
           cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-dev.txt
-      - run: ruff check .
-      - run: ruff format --check .
+      - run: ruff check .  # Erreurs de style et de code
+      - run: ruff format --check .  # Formatage (vérifie sans rien modifier)
 
   #tests de couverture
   tests:
@@ -53,6 +53,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-dev.txt
+      - run: python manage.py makemigrations --check --dry-run
       - run: pytest --cov --cov-report=term-missing
 
   #check docker
@@ -62,3 +63,26 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: docker build -t dreamcatcher:ci .
+
+  #livraison continue : publie l'image sur ghcr.io après une fusion dans main,
+  #uniquement si les trois contrôles précédents sont verts
+  publier:
+    name: Publication de l'image
+    needs: [lint, tests, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Construire et publier l'image
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"  # le nom doit être en minuscules
+          docker build -t "$IMAGE:latest" -t "$IMAGE:${GITHUB_SHA::7}" .
+          docker push --all-tags "$IMAGE"

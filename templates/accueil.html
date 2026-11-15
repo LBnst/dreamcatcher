@@ -14,7 +14,7 @@
     {% elif not user.a_consenti %}
       <a href="{% url 'consentement' %}" class="btn btn-light btn-lg">Donner mon consentement</a>
     {% else %}
-      <button class="btn btn-light btn-lg" disabled>🎙️ Raconter un rêve (bientôt)</button>
+            <a href="{% url 'nouveau_reve' %}" class="btn btn-light btn-lg">🎙️ Raconter un rêve</a>
     {% endif %}
   </section>
 

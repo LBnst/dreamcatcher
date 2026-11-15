@@ -1,3 +1,10 @@
+"""Configuration Django du projet Dreamcatcher.
+
+Toutes les valeurs sensibles ou dépendantes de l'environnement
+(clé secrète, base de données, clés d'API, quotas...) sont lues depuis
+les variables d'environnement ou le fichier ``.env``.
+"""
+
 from pathlib import Path
 
 import environ
@@ -27,6 +34,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Sert les fichiers statiques en production (DEBUG=False), sans serveur dédié.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -86,9 +95,16 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # CSS et JavaScript compressés, servis par WhiteNoise.
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# journaux (monitoring) : console, lisible dans Docker, sans donnée personnelle
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -101,6 +117,7 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
+# traitement des rêves en arrière-plan (désactivé dans les tests)
 TRAITEMENT_EN_ARRIERE_PLAN = env.bool("TRAITEMENT_EN_ARRIERE_PLAN", default=True)
 
 # quotas
@@ -133,3 +150,13 @@ DUREE_MAX_VIDEO = env.int("DUREE_MAX_VIDEO", default=180)  # secondes
 
 PRIX_TRANSCRIPTION_USD_MINUTE = env.float("PRIX_TRANSCRIPTION_USD_MINUTE", default=0.0035)
 TAUX_USD_EUR = env.float("TAUX_USD_EUR", default=1.0)
+
+
+# sécurité
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+
+# cookies
+SESSION_COOKIE_SECURE = env.bool("COOKIES_SECURISES", default=False)
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])

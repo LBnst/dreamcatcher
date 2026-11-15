@@ -19,6 +19,9 @@
       <div class="collapse navbar-collapse" id="menu">
         <ul class="navbar-nav me-auto">
           <li class="nav-item"><a class="nav-link" href="{% url 'accueil' %}">Accueil</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'historique' %}">Mes rêves</a></li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="{% url 'confidentialite' %}">Confidentialité</a></li>
         </ul>
         <div class="navbar-nav align-items-md-center">

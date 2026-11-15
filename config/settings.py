@@ -106,3 +106,5 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+TRAITEMENT_EN_ARRIERE_PLAN = env.bool("TRAITEMENT_EN_ARRIERE_PLAN", default=True)

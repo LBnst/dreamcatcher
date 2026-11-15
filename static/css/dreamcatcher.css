@@ -24,3 +24,21 @@ main {
 .dc-hero .lead {
   color: var(--dc-lavande);
 }
+
+.dc-vignette {
+  width: 96px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bs-tertiary-bg);
+  border-radius: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.dc-vignette img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

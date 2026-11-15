@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block titre %}Mes rêves – Dreamcatcher{% endblock %}
+
+{% block contenu %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Mes rêves</h1>
+    <a href="{% url 'nouveau_reve' %}" class="btn btn-primary">🎙️ Raconter un rêve</a>
+  </div>
+
+  {% if page.object_list %}
+    <div class="list-group mb-4">
+      {% for reve in page.object_list %}
+        <a href="{% url 'detail_reve' reve.pk %}"
+           class="list-group-item list-group-item-action d-flex gap-3 align-items-start py-3">
+          <div class="dc-vignette flex-shrink-0">
+            {% if reve.media and reve.type_media == "image" %}
+              <img src="{{ reve.media.url }}" alt="" loading="lazy">
+            {% elif reve.type_media == "video" %}
+              <span aria-hidden="true">🎬</span>
+            {% else %}
+              <span aria-hidden="true">🌙</span>
+            {% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>{{ reve.date_reve|date:"j F Y" }}</strong>
+              {% if reve.statut == "erreur" %}
+                <span class="badge text-bg-danger">Erreur</span>
+              {% elif reve.statut == "en_cours" %}
+                <span class="badge text-bg-info">En cours</span>
+              {% endif %}
+            </div>
+            {% if reve.emotion %}
+              <div class="small">{{ reve.icone_emotion }} {{ reve.get_emotion_display }}</div>
+            {% endif %}
+            <p class="mb-0 small text-body-secondary">
+              {{ reve.transcription|truncatewords:25|default:"Transcription en attente." }}
+            </p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    {% if page.has_other_pages %}
+      <nav aria-label="Pages de l'historique">
+        <ul class="pagination justify-content-center">
+          {% if page.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page.previous_page_number }}">Précédent</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+          </li>
+          {% if page.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page.next_page_number }}">Suivant</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="text-center py-5">
+      <p class="fs-5">Vous n'avez encore raconté aucun rêve.</p>
+      <a href="{% url 'nouveau_reve' %}" class="btn btn-primary">Raconter mon premier rêve</a>
+    </div>
+  {% endif %}
+{% endblock %}

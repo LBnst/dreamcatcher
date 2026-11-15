@@ -1,6 +1,7 @@
 """Vues des rêves : création, consultation et suivi du traitement."""
 
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
@@ -12,6 +13,25 @@ from .models import Reve
 from .services.pipeline import demarrer_traitement
 from .services.quotas import MESSAGE_BUDGET, budget_atteint, message_quota
 from .services.video import suivre_video
+
+TAILLE_PAGE_HISTORIQUE = 10
+
+
+def historique(request):
+    """Liste les rêves de l'utilisateur, du plus récent au plus ancien, 10 par page.
+
+    Accessible même sans consentement : chacun doit pouvoir consulter ses
+    propres données (droit d'accès RGPD).
+
+    Args:
+        request: Requête HTTP reçue.
+
+    Returns:
+        HttpResponse: La page de l'historique.
+    """
+    reves = Reve.objects.filter(utilisateur=request.user)
+    page = Paginator(reves, TAILLE_PAGE_HISTORIQUE).get_page(request.GET.get("page"))
+    return render(request, "dreams/historique.html", {"page": page})
 
 
 @consentement_requis

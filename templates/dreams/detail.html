@@ -53,7 +53,11 @@
     {% endif %}
 
     <p><span class="badge text-bg-secondary">Rendu choisi : {{ reve.get_type_media_display }}</span></p>
-    <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'historique' %}" class="btn btn-outline-secondary">← Mes rêves</a>
+      <a href="{% url 'nouveau_reve' %}" class="btn btn-outline-primary">Raconter un autre rêve</a>
+    </div>
   </div>
 
   <script src="{% static 'js/statut_reve.js' %}"></script>

@@ -277,3 +277,28 @@ def test_reessayer_refuse_une_requete_get(client_consentant, utilisateur_consent
     reve = creer_reve(utilisateur_consentant, statut=Reve.Statut.ERREUR)
 
     assert client_consentant.get(reverse("reessayer_reve", args=[reve.pk])).status_code == 405
+
+
+def test_reessayer_apres_echec_de_l_image(
+    client_consentant, utilisateur_consentant, traitements_lances
+):
+    reve = creer_reve(
+        utilisateur_consentant, statut=Reve.Statut.ERREUR, audio="", transcription="Je volais."
+    )
+
+    client_consentant.post(reverse("reessayer_reve", args=[reve.pk]))
+
+    assert traitements_lances == [reve]
+
+
+def test_detail_affiche_l_image_generee(client_consentant, utilisateur_consentant):
+    reve = creer_reve(
+        utilisateur_consentant,
+        statut=Reve.Statut.TERMINE,
+        media=SimpleUploadedFile("reve.jpg", b"image"),
+    )
+
+    contenu = client_consentant.get(reverse("detail_reve", args=[reve.pk])).content.decode()
+
+    assert "Illustration générée" in contenu
+    assert reve.media.url in contenu

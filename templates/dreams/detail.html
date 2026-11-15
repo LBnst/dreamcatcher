@@ -23,6 +23,11 @@
       </div>
     {% endif %}
 
+    {% if reve.media %}
+      <img src="{{ reve.media.url }}" class="img-fluid rounded shadow-sm mb-4"
+           alt="Illustration générée à partir de votre rêve">
+    {% endif %}
+
     {% if reve.emotion %}
       <p class="fs-5 mb-1">
         <span aria-hidden="true">{{ reve.icone_emotion }}</span>

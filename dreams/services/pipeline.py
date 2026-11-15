@@ -1,7 +1,9 @@
-"""Traitement complet d'un rêve : transcription, puis classification émotionnelle.
+"""Traitement complet d'un rêve : transcription, émotion, puis illustration.
 
 Le traitement tourne dans un fil d'exécution (thread) séparé pour que la page réponde
 immédiatement ; la page du rêve interroge ensuite son statut toutes les 5 secondes.
+Chaque étape réussie est conservée : une nouvelle tentative reprend là où l'échec
+s'est produit, sans refaire (ni repayer) les étapes précédentes.
 """
 
 import logging
@@ -12,6 +14,8 @@ from django.db import connection
 
 from dreams.models import Reve
 from dreams.services.emotion import ErreurClassification, classer_emotion
+from dreams.services.image import ErreurGeneration, generer_image
+from dreams.services.prompt import ecrire_prompt_visuel
 from dreams.services.quotas import BudgetEpuise
 from dreams.services.transcription import ErreurTranscription, transcrire
 
@@ -20,6 +24,7 @@ logger = logging.getLogger(__name__)
 MESSAGE_INATTENDU = (
     "Une erreur inattendue est survenue. Votre rêve est conservé : réessayez plus tard."
 )
+ERREURS_PREVUES = (ErreurTranscription, ErreurGeneration, BudgetEpuise)
 
 
 def demarrer_traitement(reve):
@@ -47,7 +52,7 @@ def _traiter_en_arriere_plan(reve_id):
 
 
 def traiter_reve(reve_id):
-    """Transcrit le rêve, supprime l'audio, puis classe son émotion.
+    """Transcrit le rêve, classe son émotion, puis génère son illustration.
 
     Ne lève jamais d'exception : en cas d'échec, le rêve passe au statut « erreur »
     avec un message clair, et reste conservé pour une nouvelle tentative.
@@ -58,7 +63,7 @@ def traiter_reve(reve_id):
     reve = Reve.objects.get(pk=reve_id)
     try:
         _executer(reve)
-    except (ErreurTranscription, BudgetEpuise) as erreur:
+    except ERREURS_PREVUES as erreur:
         _marquer_en_erreur(reve, str(erreur))
     except Exception:
         logger.exception("Erreur inattendue pendant le traitement du rêve %s.", reve_id)
@@ -66,22 +71,30 @@ def traiter_reve(reve_id):
 
 
 def _executer(reve):
-    """Enchaîne les étapes du traitement et enregistre le résultat.
+    """Enchaîne les étapes qui restent à faire, puis enregistre le résultat.
 
     Args:
         reve: Rêve à traiter.
 
     Raises:
         ErreurTranscription: Si la transcription échoue (l'audio est alors conservé).
+        ErreurGeneration: Si l'illustration échoue (la transcription est conservée).
         BudgetEpuise: Si le budget mensuel est atteint.
     """
-    reve.transcription = transcrire(reve)
-    reve.audio.delete(save=False)  # RGPD : l'audio n'est plus utile une fois transcrit
+    if not reve.transcription:
+        reve.transcription = transcrire(reve)
+        reve.audio.delete(save=False)  # RGPD : l'audio n'est plus utile une fois transcrit
+        reve.save()  # étape acquise : une nouvelle tentative ne la refera pas
 
-    try:
-        reve.emotion, reve.score_emotion = classer_emotion(reve.transcription)
-    except ErreurClassification:
-        logger.warning("Rêve %s conservé sans émotion.", reve.pk)
+    if not reve.emotion:
+        try:
+            reve.emotion, reve.score_emotion = classer_emotion(reve.transcription)
+        except ErreurClassification:
+            logger.warning("Rêve %s conservé sans émotion.", reve.pk)
+
+    if reve.type_media == Reve.TypeMedia.IMAGE and not reve.media:
+        generer_image(reve, ecrire_prompt_visuel(reve))
+    # La génération vidéo sera branchée à l'étape 3.3.
 
     reve.statut = Reve.Statut.TERMINE
     reve.message_erreur = ""

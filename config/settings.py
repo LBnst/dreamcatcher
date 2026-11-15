@@ -87,3 +87,22 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
+MISTRAL_MODELE_TRANSCRIPTION = env(
+    "MISTRAL_MODELE_TRANSCRIPTION", default="voxtral-mini-transcribe-3-0"
+)
+PRIX_TRANSCRIPTION_USD_MINUTE = env.float("PRIX_TRANSCRIPTION_USD_MINUTE", default=0.0035)
+TAUX_USD_EUR = env.float("TAUX_USD_EUR", default=1.0)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "{asctime} {levelname} {name} : {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "root": {"handlers": ["console"], "level": "INFO"},
+}
